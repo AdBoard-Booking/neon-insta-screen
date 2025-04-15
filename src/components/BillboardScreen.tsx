@@ -77,7 +77,7 @@ const BillboardScreen = () => {
         {/* Main Content Area */}
         <div className={`flex ${orientation === "portrait" ? "flex-col" : "flex-row"} items-center justify-center w-full gap-4 flex-1`}>
           {/* Left Text Section */}
-          <div className={`${orientation === "portrait" ? "mb-4 text-center" : "w-1/2 text-left"}`}>
+          <div className={`${orientation === "portrait" ? "mb-4 text-center" : "w-1/2 text-left"} relative`}>
             <div className="space-y-2">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-float">
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neon-pink via-white to-neon-blue">
@@ -100,9 +100,14 @@ const BillboardScreen = () => {
                 </p>
               </div>
             </div>
+
+            {/* Move QR Code to left side below text for portrait and landscape */}
+            <div className={`absolute ${orientation === "portrait" ? "bottom-[-100px] left-1/2 transform -translate-x-1/2" : "bottom-[-20px] left-0"}`}>
+              <QRCodeSection orientation={orientation} />
+            </div>
           </div>
 
-          {/* Right Photo Display Section - Made bigger */}
+          {/* Right Photo Display Section */}
           <div className={`${orientation === "portrait" ? "w-full" : "w-1/2"} flex justify-center items-center relative`}>
             <div className="relative">
               <PolaroidFrame 
@@ -123,8 +128,8 @@ const BillboardScreen = () => {
           </div>
         </div>
 
-        {/* Footer with QR Code */}
-        <QRCodeSection orientation={orientation} />
+        {/* Remove this line as QR code is now positioned within the left text section */}
+        {/* <QRCodeSection orientation={orientation} /> */}
       </div>
     </div>
   );
