@@ -24,7 +24,8 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
     return () => clearTimeout(timer);
   }, [post.id]);
 
-  const frameSize = orientation === "portrait" ? "w-64 h-72" : "w-72 h-80";
+  // Increased frame size based on orientation
+  const frameSize = orientation === "portrait" ? "w-80 h-96" : "w-96 h-108";
 
   return (
     <div 
@@ -46,8 +47,8 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
       <div className="absolute bottom-2 right-2 w-2 h-2 bg-neon-purple rounded-full" />
       <div className="absolute bottom-2 left-2 w-2 h-2 bg-neon-pink rounded-full" />
       
-      {/* Image container with Instagram-style frame */}
-      <div className="w-full h-[70%] overflow-hidden rounded mb-2 border-2 border-gray-100">
+      {/* Image container with Instagram-style frame - Made bigger */}
+      <div className="w-full h-[75%] overflow-hidden rounded mb-2 border-2 border-gray-100">
         <img 
           src={post.imageUrl} 
           alt="Instagram post" 
@@ -74,9 +75,9 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
         <span className="text-xs text-gray-600 font-medium">{likes} likes</span>
       </div>
       
-      {/* Instagram hashtag */}
+      {/* Instagram hashtag - Updated */}
       <div className="mt-1 px-1 text-xs text-blue-500 truncate">
-        #SeenOnThisScreen
+        #adboardbooking
       </div>
     </div>
   );

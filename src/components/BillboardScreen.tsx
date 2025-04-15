@@ -32,13 +32,13 @@ const BillboardScreen = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Cycle through posts
+  // Cycle through posts more frequently to simulate real-time updates
   useEffect(() => {
     const interval = setInterval(() => {
       setActivePostIndex((prev) => (prev + 1) % mockPosts.length);
       setShowFlash(true);
       setTimeout(() => setShowFlash(false), 1000);
-    }, 10000);
+    }, 8000); // Changed from 10000 to 8000 for more frequent updates
 
     return () => clearInterval(interval);
   }, []);
@@ -92,7 +92,7 @@ const BillboardScreen = () => {
                 </p>
                 <p className={`flex items-center ${orientation === "portrait" ? "justify-center" : "justify-start"} gap-2`}>
                   <span className="text-3xl">🧡</span>
-                  <span>Use Hashtag: <span className="text-neon-blue font-bold drop-shadow-[var(--neon-blue-glow)]">#SeenOnThisScreen</span></span>
+                  <span>Use Hashtag: <span className="text-neon-blue font-bold drop-shadow-[var(--neon-blue-glow)]">#adboardbooking</span></span>
                 </p>
                 <p className={`flex items-center ${orientation === "portrait" ? "justify-center" : "justify-start"} gap-2 mt-2`}>
                   <span className="text-3xl">🎉</span>
@@ -102,7 +102,7 @@ const BillboardScreen = () => {
             </div>
           </div>
 
-          {/* Right Photo Display Section */}
+          {/* Right Photo Display Section - Made bigger */}
           <div className={`${orientation === "portrait" ? "w-full" : "w-1/2"} flex justify-center items-center relative`}>
             <div className="relative">
               <PolaroidFrame 
