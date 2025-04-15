@@ -3,7 +3,7 @@ import { FC, useEffect, useState } from "react";
 import NeonSparkle from "./NeonSparkle";
 
 interface Post {
-  id: number;
+  id: string | number;
   imageUrl: string;
   username: string;
 }

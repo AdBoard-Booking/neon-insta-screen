@@ -4,22 +4,26 @@ import { Instagram } from "lucide-react";
 import PolaroidFrame from "./PolaroidFrame";
 import NeonBubble from "./NeonBubble";
 import QRCodeSection from "./QRCodeSection";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock Instagram posts - in a real application, these would come from an API
-const mockPosts = [
-  { id: 1, imageUrl: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e", username: "@sarah_j" },
-  { id: 2, imageUrl: "https://images.unsplash.com/photo-1521146764736-56c929d59c83", username: "@mike_hills" },
-  { id: 3, imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb", username: "@tanya_m" },
-  { id: 4, imageUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d", username: "@daniel_k" },
-  { id: 5, imageUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9", username: "@jessica_r" },
-];
+interface InstagramPost {
+  id: string;
+  post_id: string;
+  username: string;
+  image_url: string;
+  caption?: string;
+  hashtags?: string[];
+  created_at: string;
+}
 
 const BillboardScreen = () => {
+  const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [activePostIndex, setActivePostIndex] = useState(0);
   const [showFlash, setShowFlash] = useState(false);
   const [orientation, setOrientation] = useState<"portrait" | "landscape">(
     window.innerHeight > window.innerWidth ? "portrait" : "landscape"
   );
+  const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Handle orientation changes
@@ -32,16 +36,94 @@ const BillboardScreen = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Cycle through posts more frequently to simulate real-time updates
+  // Fetch Instagram posts from Supabase
   useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        // Get posts from Supabase
+        const { data, error } = await supabase
+          .from('instagram_posts')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching posts:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          setPosts(data);
+        } else {
+          // Trigger function to fetch posts if none exist
+          try {
+            // Call our edge function to fetch and store Instagram posts
+            const response = await fetch('https://eclrnxqfpctsdmkxhhht.supabase.co/functions/v1/fetch-instagram-posts');
+            
+            if (!response.ok) {
+              throw new Error('Failed to fetch Instagram posts');
+            }
+            
+            // Try to fetch posts again after the function has run
+            const { data: newData } = await supabase
+              .from('instagram_posts')
+              .select('*')
+              .order('created_at', { ascending: false });
+              
+            if (newData && newData.length > 0) {
+              setPosts(newData);
+            }
+          } catch (funcError) {
+            console.error('Error calling fetch-instagram-posts function:', funcError);
+          }
+        }
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+
+    // Set up realtime subscription for live updates
+    const channel = supabase
+      .channel('public:instagram_posts')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'instagram_posts' }, 
+        (payload) => {
+          console.log('Realtime update:', payload);
+          fetchPosts(); // Re-fetch all posts when any change happens
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Cycle through posts for the display
+  useEffect(() => {
+    if (posts.length === 0) return;
+    
     const interval = setInterval(() => {
-      setActivePostIndex((prev) => (prev + 1) % mockPosts.length);
+      setActivePostIndex((prev) => (prev + 1) % posts.length);
       setShowFlash(true);
       setTimeout(() => setShowFlash(false), 1000);
-    }, 8000); // Changed from 10000 to 8000 for more frequent updates
+    }, 8000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [posts.length]);
+
+  // Convert Supabase post to format expected by PolaroidFrame
+  const formatPostForDisplay = (post: InstagramPost) => {
+    return {
+      id: post.id,
+      imageUrl: post.image_url,
+      username: post.username
+    };
+  };
 
   return (
     <div 
@@ -102,24 +184,37 @@ const BillboardScreen = () => {
             </div>
           </div>
 
-          {/* Right Photo Display Section - Made bigger */}
+          {/* Right Photo Display Section */}
           <div className={`${orientation === "portrait" ? "w-full" : "w-1/2"} flex justify-center items-center relative`}>
-            <div className="relative">
-              <PolaroidFrame 
-                post={mockPosts[activePostIndex]} 
-                orientation={orientation}
-                key={activePostIndex}
-              />
-              
-              {/* Flash effect when new post appears */}
-              {showFlash && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-30 animate-flash z-20 rounded-xl">
-                  <span className="text-4xl font-bold text-neon-pink drop-shadow-[var(--neon-pink-glow)]">
-                    🔥 You're On!
-                  </span>
-                </div>
-              )}
-            </div>
+            {isLoading ? (
+              <div className="relative bg-white rounded-md p-3 animate-pulse" style={{width: '320px', height: '400px'}}>
+                <div className="h-3/4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+              </div>
+            ) : posts.length > 0 ? (
+              <div className="relative">
+                <PolaroidFrame 
+                  post={formatPostForDisplay(posts[activePostIndex])} 
+                  orientation={orientation}
+                  key={posts[activePostIndex].id}
+                />
+                
+                {/* Flash effect when new post appears */}
+                {showFlash && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-30 animate-flash z-20 rounded-xl">
+                    <span className="text-4xl font-bold text-neon-pink drop-shadow-[var(--neon-pink-glow)]">
+                      🔥 You're On!
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-md p-5 text-center">
+                <p className="text-gray-800">No posts with #adboardbooking yet!</p>
+                <p className="text-gray-600 text-sm mt-2">Be the first to post!</p>
+              </div>
+            )}
           </div>
         </div>
 
