@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { Instagram } from "lucide-react";
 import PolaroidFrame from "./PolaroidFrame";
@@ -16,7 +15,11 @@ interface InstagramPost {
   created_at: string;
 }
 
-const BillboardScreen = () => {
+interface BillboardScreenProps {
+  useElfsight?: boolean;
+}
+
+const BillboardScreen = ({ useElfsight = false }: BillboardScreenProps) => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [activePostIndex, setActivePostIndex] = useState(0);
   const [showFlash, setShowFlash] = useState(false);
@@ -26,7 +29,6 @@ const BillboardScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Handle orientation changes
   useEffect(() => {
     const handleResize = () => {
       setOrientation(window.innerHeight > window.innerWidth ? "portrait" : "landscape");
@@ -36,11 +38,9 @@ const BillboardScreen = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Fetch Instagram posts from Supabase
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        // Get posts from Supabase
         const { data, error } = await supabase
           .from('instagram_posts')
           .select('*')
@@ -54,16 +54,13 @@ const BillboardScreen = () => {
         if (data && data.length > 0) {
           setPosts(data);
         } else {
-          // Trigger function to fetch posts if none exist
           try {
-            // Call our edge function to fetch and store Instagram posts
             const response = await fetch('https://eclrnxqfpctsdmkxhhht.supabase.co/functions/v1/fetch-instagram-posts');
             
             if (!response.ok) {
               throw new Error('Failed to fetch Instagram posts');
             }
             
-            // Try to fetch posts again after the function has run
             const { data: newData } = await supabase
               .from('instagram_posts')
               .select('*')
@@ -86,14 +83,13 @@ const BillboardScreen = () => {
 
     fetchPosts();
 
-    // Set up realtime subscription for live updates
     const channel = supabase
       .channel('public:instagram_posts')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'instagram_posts' }, 
         (payload) => {
           console.log('Realtime update:', payload);
-          fetchPosts(); // Re-fetch all posts when any change happens
+          fetchPosts();
         }
       )
       .subscribe();
@@ -103,7 +99,6 @@ const BillboardScreen = () => {
     };
   }, []);
 
-  // Cycle through posts for the display
   useEffect(() => {
     if (posts.length === 0) return;
     
@@ -116,7 +111,6 @@ const BillboardScreen = () => {
     return () => clearInterval(interval);
   }, [posts.length]);
 
-  // Convert Supabase post to format expected by PolaroidFrame
   const formatPostForDisplay = (post: InstagramPost) => {
     return {
       id: post.id,
@@ -130,10 +124,8 @@ const BillboardScreen = () => {
       ref={containerRef}
       className="relative h-screen w-full overflow-hidden bg-neon-darkPurple font-poppins"
     >
-      {/* Gradient background overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-black/50" />
       
-      {/* Grid pattern overlay */}
       <div className="absolute inset-0 opacity-10" 
            style={{ 
              backgroundImage: 'linear-gradient(#9b87f5 1px, transparent 1px), linear-gradient(to right, #9b87f5 1px, transparent 1px)', 
@@ -141,13 +133,11 @@ const BillboardScreen = () => {
            }} 
       />
       
-      {/* Bubbles Background Effect */}
       {Array.from({ length: 20 }).map((_, i) => (
         <NeonBubble key={i} />
       ))}
 
       <div className={`relative z-10 h-full w-full flex flex-col items-center justify-between p-4 ${orientation === "portrait" ? "py-8" : "py-4 px-8"}`}>
-        {/* Header with Instagram Logo */}
         <div className="flex items-center justify-center mb-2 mt-2">
           <Instagram className="w-10 h-10 text-white animate-glow filter drop-shadow-[var(--neon-purple-glow)]" />
           <h1 className="text-white text-4xl font-bold ml-3 tracking-wider animate-glow">
@@ -156,9 +146,7 @@ const BillboardScreen = () => {
           </h1>
         </div>
 
-        {/* Main Content Area */}
         <div className={`flex ${orientation === "portrait" ? "flex-col" : "flex-row"} items-center justify-center w-full gap-4 flex-1`}>
-          {/* Left Text Section */}
           <div className={`${orientation === "portrait" ? "mb-4 text-center" : "w-1/2 text-left"}`}>
             <div className="space-y-2">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-float">
@@ -184,7 +172,6 @@ const BillboardScreen = () => {
             </div>
           </div>
 
-          {/* Right Photo Display Section */}
           <div className={`${orientation === "portrait" ? "w-full" : "w-1/2"} flex justify-center items-center relative`}>
             {isLoading ? (
               <div className="relative bg-white rounded-md p-3 animate-pulse" style={{width: '320px', height: '400px'}}>
@@ -192,6 +179,12 @@ const BillboardScreen = () => {
                 <div className="h-6 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
               </div>
+            ) : useElfsight ? (
+              <PolaroidFrame 
+                post={{ id: "elfsight", imageUrl: "", username: "" }}
+                orientation={orientation}
+                useElfsight={true}
+              />
             ) : posts.length > 0 ? (
               <div className="relative">
                 <PolaroidFrame 
@@ -200,7 +193,6 @@ const BillboardScreen = () => {
                   key={posts[activePostIndex].id}
                 />
                 
-                {/* Flash effect when new post appears */}
                 {showFlash && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-30 animate-flash z-20 rounded-xl">
                     <span className="text-4xl font-bold text-neon-pink drop-shadow-[var(--neon-pink-glow)]">
@@ -218,7 +210,6 @@ const BillboardScreen = () => {
           </div>
         </div>
 
-        {/* Footer with QR Code */}
         <QRCodeSection orientation={orientation} />
       </div>
     </div>
