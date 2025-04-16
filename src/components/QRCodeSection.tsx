@@ -18,14 +18,14 @@ const QRCodeSection: FC<QRCodeSectionProps> = ({ orientation }) => {
         >
           {/* QR Code with custom styling */}
           <div className="relative w-20 h-20 md:w-24 md:h-24">
-            <div className="absolute inset-0 bg-[url('https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://example.com/track')] bg-contain bg-no-repeat bg-center" />
+            <div className="absolute inset-0 bg-[url('https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://instagram.com')] bg-contain bg-no-repeat bg-center" />
             
             {/* Instagram logo overlay in center */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            {/* <div className="absolute inset-0 flex items-center justify-center">
               <div className="bg-white rounded-full p-1">
                 <Instagram size={16} className="text-pink-500" />
               </div>
-            </div>
+            </div> */}
           </div>
           
           {/* Neon corner accents with glowing effect */}
