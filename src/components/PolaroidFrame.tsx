@@ -5,6 +5,8 @@ interface Post {
   id: string | number;
   imageUrl: string;
   username: string;
+  comments_count: number;
+  like_count: number
   caption?: string;
 }
 
@@ -15,11 +17,9 @@ interface PolaroidFrameProps {
 
 const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
   const [isFlipping, setIsFlipping] = useState(true);
-  const [likes, setLikes] = useState(Math.floor(Math.random() * 500) + 100);
   
   useEffect(() => {
     setIsFlipping(true);
-    setLikes(Math.floor(Math.random() * 500) + 100);
     const timer = setTimeout(() => setIsFlipping(false), 1000);
     return () => clearTimeout(timer);
   }, [post.id]);
@@ -74,11 +74,10 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
       {/* Instagram-like stats */}
       <div className="flex justify-between items-center mt-1.5 px-1">
         <div className="flex space-x-3">
-          <span className="text-red-500">❤️</span>
-          <span>💬</span>
-          <span>🔄</span>
+          <span className="text-red-500 flex items-center gap-1">❤️ <span className="text-xs text-gray-600">{post.like_count}</span></span>
+          <span className="flex items-center gap-1">💬 <span className="text-xs text-gray-600">{post.comments_count}</span></span>
+         
         </div>
-        <span className="text-xs text-gray-600 font-medium">{likes} likes</span>
       </div>
       
       {/* Caption or hashtag */}

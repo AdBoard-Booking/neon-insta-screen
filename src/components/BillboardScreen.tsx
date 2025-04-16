@@ -7,6 +7,8 @@ import QRCodeSection from "./QRCodeSection";
 
 interface InstagramPost {
   id: string;
+  like_count: number;
+  comments_count: number;
   username: string;
   image_url: string;
   caption?: string;
@@ -60,6 +62,8 @@ const BillboardScreen = () => {
           id: post.id,
           username: 'adboardbooking', // Using default username
           image_url: post.media_url,
+          like_count: post.like_count,
+          comments_count: post.comments_count,
           caption: post.caption || '',
           hashtags: extractHashtags(post.caption || ''),
           created_at: post.timestamp
@@ -97,6 +101,8 @@ const BillboardScreen = () => {
 
   const formatPostForDisplay = (post: InstagramPost) => {
     return {
+      like_count: post.like_count,
+      comments_count: post.comments_count,
       id: post.id,
       imageUrl: post.image_url,
       username: post.username,
