@@ -1,7 +1,9 @@
 import { FC, useEffect, useState } from "react";
+import moment from "moment";
 import NeonSparkle from "./NeonSparkle";
 
 interface Post {
+  timestamp: string;
   id: string | number;
   imageUrl: string;
   username: string;
@@ -68,7 +70,7 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
           <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-yellow-400 to-pink-500 mr-1.5"></div>
           <span className="text-gray-800 font-medium text-sm">{post.username}</span>
         </div>
-        <span className="text-gray-500 text-xs">Just now</span>
+        <span className="text-gray-500 text-xs">{moment(post.timestamp).fromNow()}</span>
       </div>
       
       {/* Instagram-like stats */}

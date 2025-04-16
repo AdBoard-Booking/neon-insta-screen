@@ -4,6 +4,7 @@ import { Instagram } from "lucide-react";
 import PolaroidFrame from "./PolaroidFrame";
 import NeonBubble from "./NeonBubble";
 import QRCodeSection from "./QRCodeSection";
+import { timeStamp } from "console";
 
 interface InstagramPost {
   id: string;
@@ -13,7 +14,7 @@ interface InstagramPost {
   image_url: string;
   caption?: string;
   hashtags?: string[];
-  created_at: string;
+  timestamp: string;
 }
 
 // const INSTAGRAM_API_URL = 'https://workflow.adboardbooking.com/webhook/45f3be98-f290-4e6a-b140-b8b417132f41?type=top_media&hashtag=adboardbooking';
@@ -66,7 +67,7 @@ const BillboardScreen = () => {
           comments_count: post.comments_count,
           caption: post.caption || '',
           hashtags: extractHashtags(post.caption || ''),
-          created_at: post.timestamp
+          timestamp: post.timestamp
         }));
 
         console.log(`Processing ${processedPosts.length} Instagram posts`);
@@ -101,6 +102,7 @@ const BillboardScreen = () => {
 
   const formatPostForDisplay = (post: InstagramPost) => {
     return {
+      timestamp: post.timestamp,
       like_count: post.like_count,
       comments_count: post.comments_count,
       id: post.id,
