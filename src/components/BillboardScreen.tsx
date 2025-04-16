@@ -14,7 +14,7 @@ interface InstagramPost {
   created_at: string;
 }
 
-const INSTAGRAM_API_URL = 'https://workflow.adboardbooking.com/webhook/45f3be98-f290-4e6a-b140-b8b417132f41?type=recent_media&hashtag=adboardbooking';
+const INSTAGRAM_API_URL = 'https://workflow.adboardbooking.com/webhook/45f3be98-f290-4e6a-b140-b8b417132f41?type=top_media&hashtag=adboardbooking';
 
 const BillboardScreen = () => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
