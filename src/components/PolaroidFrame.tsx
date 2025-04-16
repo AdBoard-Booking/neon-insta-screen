@@ -82,7 +82,7 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
       </div>
       
       {/* Caption or hashtag */}
-      <div className="mt-1 px-1 text-xs text-gray-700 truncate">
+      <div className="mt-1 px-1 text-xs text-gray-700">
         {formatCaption(post.caption)}
       </div>
     </div>
