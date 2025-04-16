@@ -18,7 +18,7 @@ const QRCodeSection: FC<QRCodeSectionProps> = ({ orientation }) => {
         >
           {/* QR Code with custom styling */}
           <div className="relative w-20 h-20 md:w-24 md:h-24">
-            <div className="absolute inset-0 bg-[url('https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://example.com/track')] bg-contain bg-no-repeat bg-center" />
+            <div className="absolute inset-0 bg-[url('https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://instagram.com')] bg-contain bg-no-repeat bg-center" />
             
             {/* Instagram logo overlay in center */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -49,7 +49,7 @@ const QRCodeSection: FC<QRCodeSectionProps> = ({ orientation }) => {
         
         <p className="text-white text-lg mt-2 font-medium">
           <span className="inline-block animate-pulse mr-1">👀</span> 
-          <span className="drop-shadow-[0_0_2px_rgba(255,255,255,0.7)]">Track Your Entry Live</span>
+          <span className="drop-shadow-[0_0_2px_rgba(255,255,255,0.7)]">Scan now</span>
         </p>
       </div>
     </div>
