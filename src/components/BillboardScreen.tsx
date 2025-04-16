@@ -137,7 +137,7 @@ const BillboardScreen = () => {
           </h1>
         </div>
 
-        <div className={`flex ${orientation === "portrait" ? "flex-col" : "flex-row"} items-center justify-center w-full gap-4 flex-1`}>
+        <div className={`flex ${orientation === "portrait" ? "flex-col" : "flex-row"} h-full items-center justify-center w-full gap-4 flex-1`}>
           <div className={`${orientation === "portrait" ? "mb-4 text-center" : "w-1/2 text-left"}`}>
             <div className="space-y-2">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-float">
@@ -161,17 +161,17 @@ const BillboardScreen = () => {
                 </p>
               </div>
             </div>
+            <QRCodeSection orientation={orientation} />
           </div>
-
-          <div className={`${orientation === "portrait" ? "w-full" : "w-1/2"} flex justify-center items-center relative`}>
+          <div className={`${orientation === "portrait" ? "w-full" : "w-1/2"} flex h-full justify-center items-center relative`}>
             {isLoading ? (
-              <div className="relative bg-white rounded-md p-3 animate-pulse" style={{width: '320px', height: '400px'}}>
+              <div className="relative bg-white rounded-md p-3 animate-pulse w-full h-full" >
                 <div className="h-3/4 bg-gray-200 rounded mb-2"></div>
                 <div className="h-6 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
               </div>
             ) : posts.length > 0 ? (
-              <div className="relative">
+              <div className="relative h-full py-8 pb-16">
                 <PolaroidFrame 
                   post={formatPostForDisplay(posts[activePostIndex])} 
                   orientation={orientation}
@@ -194,8 +194,6 @@ const BillboardScreen = () => {
             )}
           </div>
         </div>
-
-        <QRCodeSection orientation={orientation} />
       </div>
     </div>
   );

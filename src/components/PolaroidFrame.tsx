@@ -25,7 +25,7 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
   }, [post.id]);
 
   // Increased frame size based on orientation
-  const frameSize = orientation === "portrait" ? "w-80 h-96" : "w-96 h-108";
+  const frameSize = ''//orientation === "portrait" ? "w-80 h-96" : "w-96 h-108";
 
   // Format caption to keep it reasonably short
   const formatCaption = (caption?: string) => {
@@ -35,7 +35,7 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
 
   return (
     <div 
-      className={`${frameSize} bg-white rounded-md relative ${isFlipping ? "animate-flip" : ""} p-3 transform transition-all duration-300 hover:scale-[1.02]`}
+      className={`${frameSize} h-full  bg-white rounded-md relative ${isFlipping ? "animate-flip" : ""} p-3 transform transition-all duration-300 hover:scale-[1.02]`}
       style={{
         boxShadow: "0 0 20px rgba(155, 135, 245, 0.5), 0 0 30px rgba(51, 195, 240, 0.3)"
       }}
