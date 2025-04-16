@@ -1,9 +1,8 @@
 
 import BillboardScreen from "@/components/BillboardScreen";
-import ElfsightInstagram from "@/components/ElfsightInstagram";
 
 const Index = () => {
-  return <BillboardScreen useElfsight={true} />;
+  return <BillboardScreen />;
 };
 
 export default Index;

@@ -1,23 +1,21 @@
-
-import { FC, useEffect, useState, useRef } from "react";
+import { FC, useEffect, useState } from "react";
 import NeonSparkle from "./NeonSparkle";
 
 interface Post {
   id: string | number;
   imageUrl: string;
   username: string;
+  caption?: string;
 }
 
 interface PolaroidFrameProps {
   post: Post;
   orientation: "portrait" | "landscape";
-  useElfsight?: boolean;
 }
 
-const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation, useElfsight = false }) => {
+const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation }) => {
   const [isFlipping, setIsFlipping] = useState(true);
   const [likes, setLikes] = useState(Math.floor(Math.random() * 500) + 100);
-  const elfsightRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     setIsFlipping(true);
@@ -26,52 +24,15 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation, useElfsight 
     return () => clearTimeout(timer);
   }, [post.id]);
 
-  // Load Elfsight script when component mounts
-  useEffect(() => {
-    if (useElfsight) {
-      // Create script element
-      const script = document.createElement('script');
-      script.src = "https://static.elfsight.com/platform/platform.js";
-      script.async = true;
-      document.body.appendChild(script);
-
-      return () => {
-        // Clean up script when component unmounts
-        document.body.removeChild(script);
-      };
-    }
-  }, [useElfsight]);
-
   // Increased frame size based on orientation
   const frameSize = orientation === "portrait" ? "w-80 h-96" : "w-96 h-108";
 
-  // If using Elfsight, render the widget instead of our custom implementation
-  if (useElfsight) {
-    return (
-      <div 
-        className={`${frameSize} bg-white rounded-md relative ${isFlipping ? "animate-flip" : ""} p-3 transform transition-all duration-300 hover:scale-[1.02]`}
-        style={{
-          boxShadow: "0 0 20px rgba(155, 135, 245, 0.5), 0 0 30px rgba(51, 195, 240, 0.3)"
-        }}
-      >
-        {/* Corner dots */}
-        <div className="absolute top-2 right-2 w-2 h-2 bg-neon-pink rounded-full" />
-        <div className="absolute top-2 left-2 w-2 h-2 bg-neon-blue rounded-full" />
-        <div className="absolute bottom-2 right-2 w-2 h-2 bg-neon-purple rounded-full" />
-        <div className="absolute bottom-2 left-2 w-2 h-2 bg-neon-pink rounded-full" />
-        
-        {/* Elfsight Instagram Feed Widget */}
-        <div 
-          ref={elfsightRef}
-          className="w-full h-full overflow-auto" 
-        >
-          <div className="elfsight-app-2e175b09-93ef-4abd-91bb-a733ee15e466" data-elfsight-app-lazy></div>
-        </div>
-      </div>
-    );
-  }
+  // Format caption to keep it reasonably short
+  const formatCaption = (caption?: string) => {
+    if (!caption) return "#adboardbooking";
+    return caption.length > 100 ? caption.substring(0, 97) + '...' : caption;
+  };
 
-  // Original PolaroidFrame implementation
   return (
     <div 
       className={`${frameSize} bg-white rounded-md relative ${isFlipping ? "animate-flip" : ""} p-3 transform transition-all duration-300 hover:scale-[1.02]`}
@@ -120,9 +81,9 @@ const PolaroidFrame: FC<PolaroidFrameProps> = ({ post, orientation, useElfsight 
         <span className="text-xs text-gray-600 font-medium">{likes} likes</span>
       </div>
       
-      {/* Instagram hashtag - Updated */}
-      <div className="mt-1 px-1 text-xs text-blue-500 truncate">
-        #adboardbooking
+      {/* Caption or hashtag */}
+      <div className="mt-1 px-1 text-xs text-gray-700 truncate">
+        {formatCaption(post.caption)}
       </div>
     </div>
   );

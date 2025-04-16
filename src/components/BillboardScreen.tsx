@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { Instagram } from "lucide-react";
 import PolaroidFrame from "./PolaroidFrame";
@@ -15,11 +16,7 @@ interface InstagramPost {
   created_at: string;
 }
 
-interface BillboardScreenProps {
-  useElfsight?: boolean;
-}
-
-const BillboardScreen = ({ useElfsight = false }: BillboardScreenProps) => {
+const BillboardScreen = () => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
   const [activePostIndex, setActivePostIndex] = useState(0);
   const [showFlash, setShowFlash] = useState(false);
@@ -115,7 +112,8 @@ const BillboardScreen = ({ useElfsight = false }: BillboardScreenProps) => {
     return {
       id: post.id,
       imageUrl: post.image_url,
-      username: post.username
+      username: post.username,
+      caption: post.caption
     };
   };
 
@@ -179,12 +177,6 @@ const BillboardScreen = ({ useElfsight = false }: BillboardScreenProps) => {
                 <div className="h-6 bg-gray-200 rounded mb-2"></div>
                 <div className="h-4 bg-gray-200 rounded"></div>
               </div>
-            ) : useElfsight ? (
-              <PolaroidFrame 
-                post={{ id: "elfsight", imageUrl: "", username: "" }}
-                orientation={orientation}
-                useElfsight={true}
-              />
             ) : posts.length > 0 ? (
               <div className="relative">
                 <PolaroidFrame 
