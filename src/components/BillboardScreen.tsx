@@ -4,17 +4,17 @@ import { Instagram } from "lucide-react";
 import PolaroidFrame from "./PolaroidFrame";
 import NeonBubble from "./NeonBubble";
 import QRCodeSection from "./QRCodeSection";
-import { supabase } from "@/integrations/supabase/client";
 
 interface InstagramPost {
   id: string;
-  post_id: string;
   username: string;
   image_url: string;
   caption?: string;
   hashtags?: string[];
   created_at: string;
 }
+
+const INSTAGRAM_API_URL = 'https://workflow.adboardbooking.com/webhook/45f3be98-f290-4e6a-b140-b8b417132f41?type=recent_media&hashtag=adboardbooking';
 
 const BillboardScreen = () => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
@@ -38,62 +38,48 @@ const BillboardScreen = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const { data, error } = await supabase
-          .from('instagram_posts')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching posts:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setPosts(data);
-        } else {
-          try {
-            const response = await fetch('https://eclrnxqfpctsdmkxhhht.supabase.co/functions/v1/fetch-instagram-posts');
-            
-            if (!response.ok) {
-              throw new Error('Failed to fetch Instagram posts');
-            }
-            
-            const { data: newData } = await supabase
-              .from('instagram_posts')
-              .select('*')
-              .order('created_at', { ascending: false });
-              
-            if (newData && newData.length > 0) {
-              setPosts(newData);
-            }
-          } catch (funcError) {
-            console.error('Error calling fetch-instagram-posts function:', funcError);
-          }
+        console.log('Fetching Instagram posts from:', INSTAGRAM_API_URL);
+        const response = await fetch(INSTAGRAM_API_URL);
+        
+        if (!response.ok) {
+          console.error('Failed to fetch from Instagram API:', response.statusText);
+          throw new Error(`Failed to fetch from Instagram API: ${response.statusText}`);
         }
         
+        const data = await response.json();
+        console.log('Instagram API response:', JSON.stringify(data).substring(0, 200) + '...');
+        
+        if (!data || !data.data || !Array.isArray(data.data)) {
+          console.error('Invalid response format from Instagram API');
+          throw new Error('Invalid response format from Instagram API');
+        }
+
+        // Process the posts
+        const processedPosts = data.data.map(post => ({
+          id: post.id,
+          username: 'adboardbooking', // Using default username
+          image_url: post.media_url,
+          caption: post.caption || '',
+          hashtags: extractHashtags(post.caption || ''),
+          created_at: post.timestamp
+        }));
+
+        console.log(`Processing ${processedPosts.length} Instagram posts`);
+        setPosts(processedPosts);
         setIsLoading(false);
       } catch (err) {
-        console.error('Unexpected error:', err);
+        console.error('Error fetching Instagram posts:', err);
         setIsLoading(false);
       }
     };
 
+    // Initial fetch
     fetchPosts();
 
-    const channel = supabase
-      .channel('public:instagram_posts')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'instagram_posts' }, 
-        (payload) => {
-          console.log('Realtime update:', payload);
-          fetchPosts();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // Set up interval for periodic refreshing
+    const refreshInterval = setInterval(fetchPosts, 60000); // Refresh every minute
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   useEffect(() => {
@@ -115,6 +101,13 @@ const BillboardScreen = () => {
       username: post.username,
       caption: post.caption
     };
+  };
+
+  // Helper function to extract hashtags from caption
+  const extractHashtags = (caption: string): string[] => {
+    const hashtagRegex = /#(\w+)/g;
+    const matches = caption.match(hashtagRegex);
+    return matches ? matches.map(tag => tag.substring(1)) : [];
   };
 
   return (
