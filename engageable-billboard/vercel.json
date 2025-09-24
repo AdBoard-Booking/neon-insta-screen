@@ -1,0 +1,41 @@
+{
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "AIRTABLE_API_KEY": "@airtable_api_key",
+    "AIRTABLE_BASE_ID": "@airtable_base_id",
+    "AIRTABLE_TABLE_NAME": "@airtable_table_name",
+    "CLOUDINARY_CLOUD_NAME": "@cloudinary_cloud_name",
+    "CLOUDINARY_API_KEY": "@cloudinary_api_key",
+    "CLOUDINARY_API_SECRET": "@cloudinary_api_secret",
+    "WHATSAPP_ACCESS_TOKEN": "@whatsapp_access_token",
+    "WHATSAPP_PHONE_NUMBER_ID": "@whatsapp_phone_number_id",
+    "WHATSAPP_VERIFY_TOKEN": "@whatsapp_verify_token",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "ADMIN_EMAIL": "@admin_email",
+    "ADMIN_PASSWORD": "@admin_password"
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ]
+}

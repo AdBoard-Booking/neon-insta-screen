@@ -1,0 +1,43 @@
+{
+  "name": "engageable-billboard",
+  "version": "1.0.0",
+  "description": "UGC Selfie Wall v2 - Upload selfies via WhatsApp or web and display them on a digital billboard with real-time FOMO prompts",
+  "keywords": ["selfie", "billboard", "digital", "upload", "whatsapp", "instagram", "viral", "social-media", "ugc"],
+  "author": "Your Name",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "type-check": "tsc --noEmit",
+    "preview": "next build && next start"
+  },
+  "dependencies": {
+    "@types/multer": "^2.0.0",
+    "airtable": "^0.12.2",
+    "axios": "^1.12.2",
+    "cloudinary": "^2.7.0",
+    "framer-motion": "^12.23.19",
+    "lucide-react": "^0.544.0",
+    "multer": "^2.0.2",
+    "next": "15.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
