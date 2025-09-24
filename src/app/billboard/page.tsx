@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Instagram, Heart, Share2, Users } from 'lucide-react';
+import { Instagram, Heart, Share2, Users, QrCode } from 'lucide-react';
 import { useFOMOBanner, useBillboardUpdates } from '@/lib/useSocket';
+import QRCode from 'qrcode';
 
 interface Submission {
   id: string;
@@ -22,6 +23,7 @@ export default function BillboardPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const fomoBanner = useFOMOBanner();
   useBillboardUpdates();
 
@@ -35,6 +37,28 @@ export default function BillboardPage() {
     const interval = setInterval(fetchApprovedSubmissions, 5000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Generate QR code for upload page
+    const generateQRCode = async () => {
+      try {
+        const uploadUrl = `${window.location.origin}/upload`;
+        const qrCodeDataUrl = await QRCode.toDataURL(uploadUrl, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        setQrCodeUrl(qrCodeDataUrl);
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+      }
+    };
+
+    generateQRCode();
   }, []);
 
   useEffect(() => {
@@ -99,8 +123,10 @@ export default function BillboardPage() {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <div className="h-full flex flex-col">
+      {/* Main Layout - Split into 2/3 left and 1/3 right */}
+      <div className="h-full flex">
+        {/* Left Side - 2/3 width - Main Billboard Content */}
+        <div className="w-2/3 flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-6 text-white">
           <div>
@@ -187,6 +213,39 @@ export default function BillboardPage() {
           <p className="text-sm mt-2">
             Or send via WhatsApp to +1 (555) 123-4567
           </p>
+        </div>
+        </div>
+
+        {/* Right Side - 1/3 width - QR Code Section */}
+        <div className="w-1/3 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-purple-800/30 to-indigo-800/30 border-l border-white/10">
+          <div className="text-center text-white flex flex-col items-center justify-center h-full">
+            <QrCode className="w-16 h-16 mx-auto mb-6 text-white/80" />
+            <h2 className="text-3xl font-bold mb-4">Scan to Upload</h2>
+            <p className="text-lg mb-8 opacity-90">
+              Share your selfie and join the billboard!
+            </p>
+            
+            <div className="flex-1 flex items-center justify-center">
+              {qrCodeUrl ? (
+                <div className="bg-white p-4 rounded-2xl shadow-2xl">
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="QR Code to upload page" 
+                    className="w-64 h-64"
+                  />
+                </div>
+              ) : (
+                <div className="w-64 h-64 bg-white/10 rounded-2xl flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </div>
+              )}
+            </div>
+            
+            <div className="text-sm opacity-80 mt-6">
+              <p>Point your camera at the QR code</p>
+              <p className="mt-1">or visit: <span className="font-mono text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/upload</span></p>
+            </div>
+          </div>
         </div>
       </div>
 
