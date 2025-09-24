@@ -113,6 +113,11 @@ export async function getApprovedSubmissions() {
   }));
 }
 
+export async function deleteSubmission(id: string) {
+  const record = await submissionsTable.destroy(id);
+  return record;
+}
+
 export async function getSubmissionStats() {
   const records = await submissionsTable.select().all();
   

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllSubmissions, updateSubmissionStatus, getSubmissionStats } from '@/lib/airtable';
+import { getAllSubmissions, updateSubmissionStatus, getSubmissionStats, deleteSubmission } from '@/lib/airtable';
 import { createFramedImage } from '@/lib/imagekit';
 import { sendApprovalMessage, sendRejectionMessage } from '@/lib/whatsapp';
+import { emitApprovedPost, emitRejectedPost } from '@/lib/socket-io';
 
 export async function GET() {
   try {
@@ -63,8 +64,17 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    // TODO: Emit real-time event for billboard update
-    // This would be handled by Socket.io in a real implementation
+    // Emit real-time event for billboard update
+    if (status === 'approved' && submission) {
+      emitApprovedPost({
+        ...submission,
+        status,
+        framedImageUrl,
+        approvedAt: new Date().toISOString(),
+      });
+    } else if (status === 'rejected') {
+      emitRejectedPost(id);
+    }
 
     return NextResponse.json({
       success: true,
@@ -75,6 +85,34 @@ export async function PATCH(request: NextRequest) {
     console.error('Error updating submission:', error);
     return NextResponse.json(
       { error: 'Failed to update submission' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Delete submission from Airtable
+    await deleteSubmission(id);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Submission deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting submission:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete submission' },
       { status: 500 }
     );
   }

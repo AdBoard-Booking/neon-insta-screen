@@ -10,7 +10,9 @@ import {
   Globe, 
   Users,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Submission {
@@ -39,6 +41,8 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showRejectConfirm, setShowRejectConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubmissions();
@@ -89,14 +93,55 @@ export default function AdminPage() {
         );
         
         // Update stats
-        setStats(prev => ({
-          ...prev,
-          [status]: prev[status] + 1,
-          pending: prev.pending - 1,
-        }));
+        setStats(prev => {
+          const newStats = { ...prev };
+          
+          // Find the current submission to get its current status
+          const currentSubmission = submissions.find(sub => sub.id === id);
+          const currentStatus = currentSubmission?.status;
+          
+          // Decrease count for current status
+          if (currentStatus && currentStatus !== status) {
+            newStats[currentStatus] = Math.max(0, newStats[currentStatus] - 1);
+          }
+          
+          // Increase count for new status
+          newStats[status] = newStats[status] + 1;
+          
+          return newStats;
+        });
       }
     } catch (error) {
       console.error('Error updating submission:', error);
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const deleteSubmission = async (id: string) => {
+    setIsProcessing(id);
+    
+    try {
+      const response = await fetch(`/api/admin/submissions?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Remove from local state
+        setSubmissions(prev => prev.filter(sub => sub.id !== id));
+        
+        // Update stats
+        setStats(prev => ({
+          ...prev,
+          total: prev.total - 1,
+        }));
+        
+        setShowDeleteConfirm(null);
+      }
+    } catch (error) {
+      console.error('Error deleting submission:', error);
     } finally {
       setIsProcessing(null);
     }
@@ -309,8 +354,23 @@ export default function AdminPage() {
                         {formatDate(submission.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {submission.status === 'pending' && (
-                          <div className="flex space-x-2">
+                        <div className="flex items-center space-x-2">
+                          {submission.status === 'approved' && (
+                            <div className="flex items-center space-x-1 text-green-600 mr-2">
+                              <CheckCircle className="w-4 h-4" />
+                              <span className="text-sm">Live on billboard</span>
+                            </div>
+                          )}
+                          
+                          {submission.status === 'rejected' && (
+                            <div className="flex items-center space-x-1 text-red-600 mr-2">
+                              <XCircle className="w-4 h-4" />
+                              <span className="text-sm">Rejected</span>
+                            </div>
+                          )}
+
+                          {/* Approve button for non-approved submissions */}
+                          {submission.status !== 'approved' && (
                             <button
                               onClick={() => updateSubmissionStatus(submission.id, 'approved')}
                               disabled={isProcessing === submission.id}
@@ -323,28 +383,30 @@ export default function AdminPage() {
                               )}
                               Approve
                             </button>
+                          )}
+
+                          {/* Reject button for non-rejected submissions */}
+                          {submission.status !== 'rejected' && (
                             <button
-                              onClick={() => updateSubmissionStatus(submission.id, 'rejected')}
+                              onClick={() => setShowRejectConfirm(submission.id)}
                               disabled={isProcessing === submission.id}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 disabled:opacity-50"
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 disabled:opacity-50"
                             >
-                              <XCircle className="w-3 h-3 mr-1" />
+                              <AlertTriangle className="w-3 h-3 mr-1" />
                               Reject
                             </button>
-                          </div>
-                        )}
-                        {submission.status === 'approved' && (
-                          <div className="flex items-center space-x-1 text-green-600">
-                            <CheckCircle className="w-4 h-4" />
-                            <span className="text-sm">Live on billboard</span>
-                          </div>
-                        )}
-                        {submission.status === 'rejected' && (
-                          <div className="flex items-center space-x-1 text-red-600">
-                            <XCircle className="w-4 h-4" />
-                            <span className="text-sm">Rejected</span>
-                          </div>
-                        )}
+                          )}
+
+                          {/* Delete button for all submissions */}
+                          <button
+                            onClick={() => setShowDeleteConfirm(submission.id)}
+                            disabled={isProcessing === submission.id}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -366,6 +428,85 @@ export default function AdminPage() {
                 : `No ${filter} submissions found.`
               }
             </p>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-gray-900">Delete Submission</h3>
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete this submission? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteSubmission(showDeleteConfirm)}
+                  disabled={isProcessing === showDeleteConfirm}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-md"
+                >
+                  {isProcessing === showDeleteConfirm ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Delete'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reject Confirmation Modal */}
+        {showRejectConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-gray-900">Reject Submission</h3>
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to reject this submission? The user will be notified.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowRejectConfirm(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    updateSubmissionStatus(showRejectConfirm, 'rejected');
+                    setShowRejectConfirm(null);
+                  }}
+                  disabled={isProcessing === showRejectConfirm}
+                  className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-50 rounded-md"
+                >
+                  {isProcessing === showRejectConfirm ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Reject'
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

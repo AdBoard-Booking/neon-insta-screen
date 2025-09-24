@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Instagram, Heart, Share2, Users } from 'lucide-react';
+import { useFOMOBanner, useBillboardUpdates } from '@/lib/useSocket';
 
 interface Submission {
   id: string;
@@ -16,22 +17,19 @@ interface Submission {
   approvedAt?: string;
 }
 
-interface FOMOBanner {
-  id: string;
-  name: string;
-  message: string;
-  timestamp: number;
-}
-
 export default function BillboardPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [fomoBanner, setFomoBanner] = useState<FOMOBanner | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const fomoBanner = useFOMOBanner();
+  useBillboardUpdates();
 
   useEffect(() => {
     fetchApprovedSubmissions();
+    
+    // Initialize Socket.io server
+    fetch('/api/socket');
     
     // Set up polling for new submissions
     const interval = setInterval(fetchApprovedSubmissions, 5000);
@@ -65,30 +63,6 @@ export default function BillboardPage() {
     }
   };
 
-  // Simulate FOMO banner (in real app, this would come from Socket.io)
-  useEffect(() => {
-    const simulateFOMO = () => {
-      const names = ['Alex', 'Sarah', 'Mike', 'Emma', 'David', 'Lisa'];
-      const randomName = names[Math.floor(Math.random() * names.length)];
-      
-      setFomoBanner({
-        id: Date.now().toString(),
-        name: randomName,
-        message: `${randomName} just uploaded a selfie 👀`,
-        timestamp: Date.now(),
-      });
-
-      // Hide banner after 3 seconds
-      setTimeout(() => {
-        setFomoBanner(null);
-      }, 3000);
-    };
-
-    // Show FOMO banner every 30 seconds
-    const fomoInterval = setInterval(simulateFOMO, 30000);
-    
-    return () => clearInterval(fomoInterval);
-  }, []);
 
   if (isLoading) {
     return (

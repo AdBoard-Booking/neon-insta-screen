@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSubmission } from '@/lib/airtable';
 import { uploadImage } from '@/lib/imagekit';
+import { emitNewUpload } from '@/lib/socket-io';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,8 +33,8 @@ export async function POST(request: NextRequest) {
       phoneNumber: phoneNumber || undefined,
     });
 
-    // TODO: Emit real-time event for FOMO banner
-    // This would be handled by Socket.io in a real implementation
+    // Emit real-time event for FOMO banner
+    emitNewUpload(name);
 
     return NextResponse.json({
       success: true,

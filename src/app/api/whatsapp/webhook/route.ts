@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyWhatsAppWebhook } from '@/lib/whatsapp';
 import { createSubmission } from '@/lib/airtable';
 import { uploadImage } from '@/lib/imagekit';
+import { emitNewUpload } from '@/lib/socket-io';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -77,6 +78,9 @@ async function handleImageMessage(message: Record<string, any>) {
       source: 'whatsapp',
       phoneNumber,
     });
+
+    // Emit real-time event for FOMO banner
+    emitNewUpload(name);
 
     // Send confirmation message
     await sendWhatsAppMessage(phoneNumber, `Thanks ${name}! Your selfie has been received and is being reviewed. We'll notify you once it's approved!`);
