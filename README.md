@@ -104,7 +104,7 @@ Visit `http://localhost:3000` to see the application.
 - `/billboard` - Live billboard display (fullscreen)
 - `/admin` - Admin dashboard for moderation
 
-## API Endpoints
+## API Endpoints 
 
 - `POST /api/submit` - Submit a new selfie
 - `GET /api/admin/submissions` - Get all submissions (admin)
