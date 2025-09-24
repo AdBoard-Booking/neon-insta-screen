@@ -1,5 +1,0 @@
-
-project_id = "eclrnxqfpctsdmkxhhht"
-
-[functions.fetch-instagram-posts]
-verify_jwt = false
