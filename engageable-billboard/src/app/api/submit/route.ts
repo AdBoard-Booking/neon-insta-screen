@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSubmission } from '@/lib/airtable';
-import { uploadImage, createFramedImage } from '@/lib/cloudinary';
-import { SocketEvents } from '@/lib/socket';
+import { uploadImage } from '@/lib/imagekit';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,9 +18,9 @@ export async function POST(request: NextRequest) {
     // Convert image to buffer
     const imageBuffer = Buffer.from(await image.arrayBuffer());
 
-    // Upload to Cloudinary
-    const uploadResult = await uploadImage(imageBuffer) as any;
-    const imageUrl = uploadResult.secure_url;
+    // Upload to ImageKit
+    const uploadResult = await uploadImage(imageBuffer, image.name);
+    const imageUrl = uploadResult.url;
 
     // Create submission in Airtable
     const submission = await createSubmission({

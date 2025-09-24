@@ -6,7 +6,7 @@ A Next.js application that enables people to upload selfies via WhatsApp or web 
 
 - 📱 **WhatsApp Integration**: Upload selfies directly via WhatsApp Business API
 - 🌐 **Web Upload**: User-friendly web interface for selfie submissions
-- 🖼️ **Image Framing**: Automatic brand overlay and framing with Cloudinary
+- 🖼️ **Image Framing**: Automatic brand overlay and framing with ImageKit
 - 📺 **Live Billboard**: Fullscreen display with rotating approved images
 - ⚡ **Real-time Events**: Socket.io powered FOMO banners and notifications
 - 👨‍💼 **Admin Dashboard**: Complete moderation system with Airtable integration
@@ -18,7 +18,7 @@ A Next.js application that enables people to upload selfies via WhatsApp or web 
 - **Frontend**: Next.js 14 (TypeScript), Tailwind CSS, Framer Motion
 - **Backend**: Next.js API routes, Socket.io
 - **Database**: Airtable
-- **Storage**: Cloudinary
+- **Storage**: ImageKit
 - **Messaging**: WhatsApp Business Cloud API
 - **Real-time**: Socket.io
 
@@ -42,10 +42,10 @@ AIRTABLE_API_KEY=your_airtable_api_key
 AIRTABLE_BASE_ID=your_airtable_base_id
 AIRTABLE_TABLE_NAME=Submissions
 
-# Cloudinary Configuration
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+# ImageKit Configuration
+IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
+IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
+IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your_imagekit_id
 
 # WhatsApp Business API
 WHATSAPP_ACCESS_TOKEN=your_whatsapp_access_token
@@ -75,11 +75,12 @@ ADMIN_PASSWORD=admin123
    - `Approved At` (Date)
    - `Created At` (Created time - auto-generated)
 
-### 4. Cloudinary Setup
+### 4. ImageKit Setup
 
-1. Create a Cloudinary account
-2. Upload a frame image with public_id "billboard-frame"
-3. Configure your cloud name, API key, and secret
+1. Create an ImageKit account
+2. Upload a frame image and note its path (e.g., "billboard-frame.png")
+3. Get your public key, private key, and URL endpoint from the dashboard
+4. Update the frame image path in the code if needed
 
 ### 5. WhatsApp Business API Setup
 
@@ -141,7 +142,7 @@ The application can be deployed to any platform that supports Next.js:
 
 ### Branding
 
-1. Update the frame image in Cloudinary
+1. Update the frame image in ImageKit
 2. Modify colors in `tailwind.config.js`
 3. Update the hashtag in the codebase
 4. Customize the WhatsApp message templates
@@ -158,7 +159,7 @@ The application can be deployed to any platform that supports Next.js:
 ### Common Issues
 
 1. **Airtable API errors**: Check your API key and base ID
-2. **Cloudinary upload fails**: Verify your cloud name and credentials
+2. **ImageKit upload fails**: Verify your public key, private key, and URL endpoint
 3. **WhatsApp webhook not working**: Ensure the webhook URL is accessible
 4. **Socket.io connection issues**: Check CORS settings
 

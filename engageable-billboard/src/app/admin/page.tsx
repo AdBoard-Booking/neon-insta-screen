@@ -10,7 +10,6 @@ import {
   Globe, 
   Users,
   Clock,
-  TrendingUp,
   RefreshCw
 } from 'lucide-react';
 
@@ -264,7 +263,7 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredSubmissions.map((submission) => {
+                {filteredSubmissions.map((submission: Submission) => {
                   const SourceIcon = getSourceIcon(submission.source);
                   
                   return (

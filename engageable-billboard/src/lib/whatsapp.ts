@@ -8,7 +8,7 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string, 
     'Content-Type': 'application/json',
   };
 
-  let payload: any = {
+  const payload: Record<string, any> = {
     messaging_product: 'whatsapp',
     to: phoneNumber,
   };

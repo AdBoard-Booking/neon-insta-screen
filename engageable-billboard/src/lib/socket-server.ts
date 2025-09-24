@@ -1,5 +1,4 @@
 import { Server as NetServer } from 'http';
-import { NextApiResponse } from 'next';
 import { Server as ServerIO } from 'socket.io';
 import { SocketEvents } from './socket';
 
@@ -27,7 +26,7 @@ export const initSocket = (httpServer: NetServer) => {
   return io;
 };
 
-export const emitToBillboard = (io: ServerIO, event: string, data: any) => {
+export const emitToBillboard = (io: ServerIO, event: string, data: Record<string, any>) => {
   io.to('billboard').emit(event, data);
 };
 
@@ -39,7 +38,7 @@ export const emitNewUpload = (io: ServerIO, name: string) => {
   });
 };
 
-export const emitApprovedPost = (io: ServerIO, submission: any) => {
+export const emitApprovedPost = (io: ServerIO, submission: Record<string, any>) => {
   emitToBillboard(io, SocketEvents.APPROVED_POST, {
     ...submission,
     timestamp: Date.now(),

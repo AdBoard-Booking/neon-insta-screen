@@ -43,7 +43,7 @@ export async function createSubmission(data: Omit<Submission, 'id' | 'createdAt'
 }
 
 export async function updateSubmissionStatus(id: string, status: 'approved' | 'rejected', framedImageUrl?: string) {
-  const updateData: any = {
+  const updateData: Record<string, any> = {
     Status: status,
   };
 

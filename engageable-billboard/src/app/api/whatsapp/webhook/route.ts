@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyWhatsAppWebhook, sendApprovalMessage, sendRejectionMessage } from '@/lib/whatsapp';
-import { createSubmission, updateSubmissionStatus } from '@/lib/airtable';
-import { uploadImage, createFramedImage } from '@/lib/cloudinary';
+import { verifyWhatsAppWebhook } from '@/lib/whatsapp';
+import { createSubmission } from '@/lib/airtable';
+import { uploadImage } from '@/lib/imagekit';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleImageMessage(message: any) {
+async function handleImageMessage(message: Record<string, any>) {
   try {
     // Get the image URL from WhatsApp
     const imageUrl = message.image?.id;
@@ -65,14 +65,14 @@ async function handleImageMessage(message: any) {
     
     const imageBuffer = Buffer.from(await response.arrayBuffer());
     
-    // Upload to Cloudinary
-    const uploadResult = await uploadImage(imageBuffer) as any;
-    const cloudinaryImageUrl = uploadResult.secure_url;
+    // Upload to ImageKit
+    const uploadResult = await uploadImage(imageBuffer, `whatsapp-${Date.now()}.jpg`);
+    const imagekitImageUrl = uploadResult.url;
 
     // Create submission
-    const submission = await createSubmission({
+    await createSubmission({
       name,
-      imageUrl: cloudinaryImageUrl,
+      imageUrl: imagekitImageUrl,
       status: 'pending',
       source: 'whatsapp',
       phoneNumber,

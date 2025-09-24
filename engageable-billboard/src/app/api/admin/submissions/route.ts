@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllSubmissions, updateSubmissionStatus, getSubmissionStats } from '@/lib/airtable';
-import { createFramedImage } from '@/lib/cloudinary';
+import { createFramedImage } from '@/lib/imagekit';
 import { sendApprovalMessage, sendRejectionMessage } from '@/lib/whatsapp';
 
 export async function GET() {

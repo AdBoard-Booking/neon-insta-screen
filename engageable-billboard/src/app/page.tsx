@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Camera, Instagram, MessageCircle, Eye, ArrowRight, Star } from 'lucide-react';
+import { Camera, Instagram, MessageCircle, Eye, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   return (
