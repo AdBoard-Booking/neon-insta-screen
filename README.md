@@ -98,7 +98,7 @@ npm run dev
 Visit `http://localhost:3000` to see the application.
 
 ## Pages
-
+ 
 - `/` - Landing page with upload options
 - `/upload` - Web upload form
 - `/billboard` - Live billboard display (fullscreen)
