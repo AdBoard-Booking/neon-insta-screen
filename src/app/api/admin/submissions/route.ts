@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllSubmissions, updateSubmissionStatus, getSubmissionStats, deleteSubmission } from '@/lib/airtable';
+import { cookies } from 'next/headers';
+import { getAllSubmissions, updateSubmissionStatus, getSubmissionStats, deleteSubmission, logAdminAction } from '@/lib/airtable';
 import { createFramedImage } from '@/lib/imagekit';
 import { sendApprovalMessage, sendRejectionMessage } from '@/lib/whatsapp';
 import { emitApprovedPost, emitRejectedPost } from '@/lib/socket-io';
+import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/custom-auth';
 
 export async function GET() {
   try {
+    const session = verifySessionToken(cookies().get(SESSION_COOKIE_NAME)?.value);
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const submissions = await getAllSubmissions();
     const stats = await getSubmissionStats();
-    
+
     return NextResponse.json({
       submissions,
       stats,
@@ -23,9 +34,21 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const session = verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+
+  if (!session) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  let submissionId: string | undefined;
+  let newStatus: 'approved' | 'rejected' | undefined;
+
   try {
     const { id, status } = await request.json();
-    
+
     if (!id || !status) {
       return NextResponse.json(
         { error: 'ID and status are required' },
@@ -33,30 +56,34 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    submissionId = id;
+    newStatus = status;
+
     let framedImageUrl: string | undefined;
 
+    const submissions = await getAllSubmissions();
+    const submission = submissions.find(s => s.id === id);
+
+    if (!submission) {
+      return NextResponse.json(
+        { error: 'Submission not found' },
+        { status: 404 }
+      );
+    }
+
     if (status === 'approved') {
-      // Get the submission to create framed image
-      const submissions = await getAllSubmissions();
-      const submission = submissions.find(s => s.id === id);
-      
-      if (submission) {
-        framedImageUrl = await createFramedImage(
-          submission.imageUrl,
-          submission.name,
-          submission.instagramHandle
-        );
-      }
+      framedImageUrl = await createFramedImage(
+        submission.imageUrl,
+        submission.name,
+        submission.instagramHandle
+      );
     }
 
     // Update status in Airtable
     await updateSubmissionStatus(id, status, framedImageUrl);
 
     // Send notification if phone number exists
-    const submissions = await getAllSubmissions();
-    const submission = submissions.find(s => s.id === id);
-    
-    if (submission?.phoneNumber) {
+    if (submission.phoneNumber) {
       if (status === 'approved' && framedImageUrl) {
         await sendApprovalMessage(submission.phoneNumber, submission.name, framedImageUrl);
       } else if (status === 'rejected') {
@@ -65,16 +92,30 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Emit real-time event for billboard update
-    if (status === 'approved' && submission) {
+    if (status === 'approved') {
+      const approvalTimestamp = new Date().toISOString();
       emitApprovedPost({
         ...submission,
         status,
         framedImageUrl,
-        approvedAt: new Date().toISOString(),
+        approvedAt: approvalTimestamp,
       });
     } else if (status === 'rejected') {
       emitRejectedPost(id);
     }
+
+    await logAdminAction({
+      action: 'update_submission_status',
+      actorEmail: session.email,
+      actorName: session.name,
+      targetId: id,
+      result: 'success',
+      details: {
+        previousStatus: submission.status,
+        newStatus: status,
+        framedImageUrl,
+      },
+    });
 
     return NextResponse.json({
       success: true,
@@ -83,6 +124,16 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating submission:', error);
+    if (submissionId && newStatus) {
+      await logAdminAction({
+        action: 'update_submission_status',
+        actorEmail: session?.email,
+        actorName: session?.name,
+        targetId: submissionId,
+        result: 'error',
+        details: { newStatus },
+      });
+    }
     return NextResponse.json(
       { error: 'Failed to update submission' },
       { status: 500 }
@@ -91,10 +142,20 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const session = verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+
+  if (!session) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  let submissionId: string | null = null;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'ID is required' },
@@ -102,8 +163,18 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    submissionId = id;
+
     // Delete submission from Airtable
     await deleteSubmission(id);
+
+    await logAdminAction({
+      action: 'delete_submission',
+      actorEmail: session.email,
+      actorName: session.name,
+      targetId: id,
+      result: 'success',
+    });
 
     return NextResponse.json({
       success: true,
@@ -111,6 +182,15 @@ export async function DELETE(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error deleting submission:', error);
+    if (submissionId) {
+      await logAdminAction({
+        action: 'delete_submission',
+        actorEmail: session?.email,
+        actorName: session?.name,
+        targetId: submissionId,
+        result: 'error',
+      });
+    }
     return NextResponse.json(
       { error: 'Failed to delete submission' },
       { status: 500 }

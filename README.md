@@ -9,7 +9,7 @@ A Next.js application that enables people to upload selfies via WhatsApp or web 
 - 🖼️ **Image Framing**: Automatic brand overlay and framing with ImageKit
 - 📺 **Live Billboard**: Fullscreen display with rotating approved images
 - ⚡ **Real-time Events**: Socket.io powered FOMO banners and notifications
-- 👨‍💼 **Admin Dashboard**: Complete moderation system with Airtable integration
+- 👨‍💼 **Admin Dashboard**: Secure moderation system with Google login and Airtable integration
 - 📊 **Analytics**: Live counters and submission statistics
 - 🎨 **Modern UI**: Beautiful, responsive design with Tailwind CSS
 
@@ -52,13 +52,17 @@ WHATSAPP_ACCESS_TOKEN=your_whatsapp_access_token
 WHATSAPP_PHONE_NUMBER_ID=your_whatsapp_phone_number_id
 WHATSAPP_VERIFY_TOKEN=your_whatsapp_verify_token
 
-# Next.js
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
-
 # Admin Authentication
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=admin123
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+ADMIN_SESSION_SECRET=a_long_random_string_used_to_sign_admin_sessions
+ADMIN_EMAILS=admin@example.com,second_admin@example.com
+
+# Audit Logging (optional)
+AIRTABLE_AUDIT_TABLE_NAME=Admin Audit Log
+
+# PostHog Analytics (optional)
+NEXT_PUBLIC_POSTHOG_KEY=phc_your_posthog_project_key
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
 ### 3. Airtable Setup
@@ -75,6 +79,17 @@ ADMIN_PASSWORD=admin123
    - `Approved At` (Date)
    - `Created At` (Created time - auto-generated)
 
+3. (Optional but recommended) Create a second table for audit logs. Suggested schema:
+   - `Action` (Single line text)
+   - `Actor Email` (Email)
+   - `Actor Name` (Single line text)
+   - `Target ID` (Single line text)
+   - `Result` (Single select: success, error)
+   - `Details` (Long text)
+   - `Timestamp` (Date)
+
+   Set `AIRTABLE_AUDIT_TABLE_NAME` to the name of this table to enable automatic audit logging.
+
 ### 4. ImageKit Setup
 
 1. Create an ImageKit account
@@ -82,14 +97,24 @@ ADMIN_PASSWORD=admin123
 3. Get your public key, private key, and URL endpoint from the dashboard
 4. Update the frame image path in the code if needed
 
-### 5. WhatsApp Business API Setup
+### 5. Admin Authentication & Audit Logging
+
+1. Enable the Google Identity Services API and create an OAuth client ID for a web application.
+2. Add the OAuth client ID to `NEXT_PUBLIC_GOOGLE_CLIENT_ID`.
+3. Generate a long random string and set it as `ADMIN_SESSION_SECRET`. This secret signs encrypted admin cookies.
+4. Provide a comma-separated list of authorized emails via `ADMIN_EMAILS`. Only these accounts can access `/admin`.
+5. (Optional) Configure `AIRTABLE_AUDIT_TABLE_NAME` to log every approve, reject, and delete action to Airtable. The recommended table schema is listed above.
+
+With these values configured the admin dashboard will require a Google login and every moderation action will be recorded for auditing.
+
+### 6. WhatsApp Business API Setup
 
 1. Set up a WhatsApp Business account
 2. Create a WhatsApp Business API app
 3. Get your access token and phone number ID
 4. Set up webhook URL: `https://yourdomain.com/api/whatsapp/webhook`
 
-### 6. Run the Application
+### 7. Run the Application
 
 ```bash
 npm run dev
@@ -102,13 +127,17 @@ Visit `http://localhost:3000` to see the application.
 - `/` - Landing page with upload options
 - `/upload` - Web upload form
 - `/billboard` - Live billboard display (fullscreen)
-- `/admin` - Admin dashboard for moderation
+- `/admin` - Admin dashboard for moderation (requires Google sign-in)
 
 ## API Endpoints
 
 - `POST /api/submit` - Submit a new selfie
-- `GET /api/admin/submissions` - Get all submissions (admin)
-- `PATCH /api/admin/submissions` - Update submission status
+- `GET /api/admin/submissions` - Get all submissions (admin, requires session cookie)
+- `PATCH /api/admin/submissions` - Update submission status (admin)
+- `DELETE /api/admin/submissions` - Delete a submission (admin)
+- `POST /api/auth/google` - Exchange Google credential for an admin session
+- `GET /api/auth/session` - Retrieve the current admin session
+- `POST /api/auth/logout` - Clear the admin session
 - `GET /api/billboard/approved` - Get approved submissions for billboard
 - `POST /api/whatsapp/webhook` - WhatsApp webhook handler
 
@@ -127,7 +156,7 @@ The application uses Socket.io for real-time communication:
 
 1. Push your code to GitHub
 2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
+3. Add environment variables in Vercel dashboard (including the Google, PostHog, and Airtable audit variables if used)
 4. Deploy
 
 ### Other Platforms
@@ -153,6 +182,10 @@ The application can be deployed to any platform that supports Next.js:
 - Implement user authentication
 - Add more social media integrations
 - Create advanced analytics dashboard
+
+### PostHog Analytics
+
+If you set `NEXT_PUBLIC_POSTHOG_KEY`, the application will automatically load PostHog analytics, track admin dashboard interactions (approve/reject/delete, manual refresh, etc.), and capture page views. You can customize the PostHog host via `NEXT_PUBLIC_POSTHOG_HOST`.
 
 ## Troubleshooting
 
