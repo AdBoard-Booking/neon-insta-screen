@@ -688,111 +688,109 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredSubmissions.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                      <div className="flex flex-col items-center space-y-3">
-                        <AlertTriangle className="w-10 h-10 text-gray-400" />
-                        <p className="text-sm">No submissions found for this filter.</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredSubmissions.map(submission => {
-                    const SourceIcon = getSourceIcon(submission.source);
-
-                    return (
-                      <tr key={submission.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                              <img
-                                src={submission.imageUrl}
-                                alt={submission.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <p className="text-sm font-semibold text-gray-900">{submission.name}</p>
-                                {submission.instagramHandle && (
-                                  <span className="inline-flex items-center space-x-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-                                    <Instagram className="w-3 h-3" />
-                                    <span>@{submission.instagramHandle}</span>
-                                  </span>
-                                )}
-                              </div>
-                              {submission.phoneNumber && (
-                                <p className="text-xs text-gray-500 mt-1">{submission.phoneNumber}</p>
-                              )}
-                            </div>
+                {filteredSubmissions.map((submission: Submission) => {
+                  const SourceIcon = getSourceIcon(submission.source);
+                  
+                  return (
+                    <tr key={submission.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <img
+                          src={submission.imageUrl}
+                          alt={submission.name}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {submission.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {submission.instagramHandle ? (
+                          <div className="flex items-center space-x-1">
+                            <Instagram className="w-4 h-4 text-pink-500" />
+                            <span className="text-sm text-gray-900">
+                              @{submission.instagramHandle}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <SourceIcon className="w-4 h-4 mr-2" />
-                            <span className="capitalize">{submission.source}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(submission.status)}`}>
-                            {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
+                        ) : (
+                          <span className="text-sm text-gray-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-1">
+                          <SourceIcon className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-900 capitalize">
+                            {submission.source}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          <div>
-                            <p>Submitted: {formatDate(submission.createdAt)}</p>
-                            {submission.approvedAt && (
-                              <p className="text-xs text-emerald-600 mt-1">Approved: {formatDate(submission.approvedAt)}</p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <div className="flex items-center space-x-2">
-                            <a
-                              href={submission.imageUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
-                              onClick={() => capturePosthogEvent('admin_view_submission_image', { submissionId: submission.id })}
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
-                            </a>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(submission.status)}`}>
+                          {submission.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(submission.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          {submission.status === 'approved' && (
+                            <div className="flex items-center space-x-1 text-green-600 mr-2">
+                              <CheckCircle className="w-4 h-4" />
+                              <span className="text-sm">Live on billboard</span>
+                            </div>
+                          )}
+                          
+                          {submission.status === 'rejected' && (
+                            <div className="flex items-center space-x-1 text-red-600 mr-2">
+                              <XCircle className="w-4 h-4" />
+                              <span className="text-sm">Rejected</span>
+                            </div>
+                          )}
+
+                          {/* Approve button for non-approved submissions */}
+                          {submission.status !== 'approved' && (
                             <button
                               onClick={() => updateSubmissionStatus(submission.id, 'approved')}
-                              disabled={isProcessing === submission.id || submission.status === 'approved'}
-                              className={`inline-flex items-center px-3 py-2 rounded-lg text-white transition-colors ${
-                                submission.status === 'approved'
-                                  ? 'bg-green-300 cursor-not-allowed'
-                                  : 'bg-green-600 hover:bg-green-700'
-                              }`}
+                              disabled={isProcessing === submission.id}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 disabled:opacity-50"
                             >
-                              <CheckCircle className="w-4 h-4 mr-2" />
+                              {isProcessing === submission.id ? (
+                                <RefreshCw className="w-3 h-3 animate-spin mr-1" />
+                              ) : (
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                              )}
                               Approve
                             </button>
+                          )}
+
+                          {/* Reject button for non-rejected submissions */}
+                          {submission.status !== 'rejected' && (
                             <button
                               onClick={() => setShowRejectConfirm(submission.id)}
                               disabled={isProcessing === submission.id}
-                              className="inline-flex items-center px-3 py-2 rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors"
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 disabled:opacity-50"
                             >
-                              <XCircle className="w-4 h-4 mr-2" />
+                              <AlertTriangle className="w-3 h-3 mr-1" />
                               Reject
                             </button>
-                            <button
-                              onClick={() => setShowDeleteConfirm(submission.id)}
-                              disabled={isProcessing === submission.id}
-                              className="inline-flex items-center px-3 py-2 rounded-lg text-gray-700 border border-gray-300 hover:bg-gray-100 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                          )}
+
+                          {/* Delete button for all submissions */}
+                          <button
+                            onClick={() => setShowDeleteConfirm(submission.id)}
+                            disabled={isProcessing === submission.id}
+                            className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

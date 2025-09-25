@@ -8,7 +8,8 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/custom-auth';
 
 export async function GET() {
   try {
-    const session = verifySessionToken(cookies().get(SESSION_COOKIE_NAME)?.value);
+    const cookieStore = await cookies();
+    const session = verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
 
     if (!session) {
       return NextResponse.json(
@@ -93,12 +94,12 @@ export async function PATCH(request: NextRequest) {
 
     // Emit real-time event for billboard update
     if (status === 'approved') {
-      const approvalTimestamp = new Date().toISOString();
+      // const approvalTimestamp = new Date().toISOString();
       emitApprovedPost({
         ...submission,
         status,
         framedImageUrl,
-        approvedAt: approvalTimestamp,
+        // approvedAt: approvalTimestamp,
       });
     } else if (status === 'rejected') {
       emitRejectedPost(id);

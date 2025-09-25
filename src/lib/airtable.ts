@@ -72,7 +72,7 @@ export async function updateSubmissionStatus(id: string, status: 'approved' | 'r
   } else if (status === 'rejected') {
     // Clear the Approved At field by setting it to null
     // This will remove any existing approval date
-    updateData['Approved At'] = null;
+    updateData['Approved At'] = '';
   }
 
   const record = await submissionsTable.update([
@@ -157,7 +157,7 @@ export async function logAdminAction(payload: AuditLogPayload) {
   try {
     const fields: FieldSet = {
       Action: payload.action,
-      Timestamp: new Date().toISOString(),
+      // Timestamp: new Date().toISOString(),
     };
 
     if (payload.actorEmail) {
