@@ -23,6 +23,10 @@ export const useSocket = () => {
       setIsConnected(false);
     });
 
+    socketInstance.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
     setSocket(socketInstance);
 
     return () => {
@@ -71,19 +75,22 @@ export const useFOMOBanner = () => {
 
 export const useBillboardUpdates = () => {
   const { socket } = useSocket();
+  const [shouldRefresh, setShouldRefresh] = useState(false);
+  
+  console.log('useBillboardUpdates hook called, socket:', socket ? 'connected' : 'null');
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleApprovedPost = (data: any) => {
-      console.log('New approved post:', data);
-      // This could trigger a refetch of submissions or update the local state
-      // For now, we'll just log it - the polling will pick up the new submission
+    const handleApprovedPost = async (data: any) => {
+      console.log('Received approved post event:', data);
+      console.log('Setting shouldRefresh to true');
+      setShouldRefresh(true);
     };
 
     const handleRejectedPost = (data: any) => {
       console.log('Post rejected:', data);
-      // Handle rejection if needed
+      setShouldRefresh(true);
     };
 
     socket.on(SocketEvents.APPROVED_POST, handleApprovedPost);
@@ -94,4 +101,6 @@ export const useBillboardUpdates = () => {
       socket.off(SocketEvents.REJECTED_POST, handleRejectedPost);
     };
   }, [socket]);
+
+  return { shouldRefresh, setShouldRefresh };
 };

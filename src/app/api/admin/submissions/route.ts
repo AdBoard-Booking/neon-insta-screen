@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { getAllSubmissions, updateSubmissionStatus, getSubmissionStats, deleteSubmission, logAdminAction } from '@/lib/airtable';
+import { getAllSubmissions, updateSubmissionStatus, getSubmissionStats, deleteSubmission, logAdminAction, isUserAuthorized } from '@/lib/airtable';
 import { createFramedImage } from '@/lib/imagekit';
 import { sendApprovalMessage, sendRejectionMessage } from '@/lib/whatsapp';
-import { emitApprovedPost, emitRejectedPost } from '@/lib/socket-io';
-import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/custom-auth';
+import { emitApprovedPost, emitRejectedPost, emitDeletedPost } from '@/lib/socket-io';
+import { stackServerApp } from '@/stack/server';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
-    const session = verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
-
-    if (!session) {
+    const user = await stackServerApp.getUser();
+    
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Check if user is authorized to access admin
+    const isAuthorized = await isUserAuthorized(user.primaryEmail || '');
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
       );
     }
 
@@ -35,12 +42,21 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const session = verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const user = await stackServerApp.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
+    );
+  }
+
+  // Check if user is authorized to access admin
+  const isAuthorized = await isUserAuthorized(user.primaryEmail || '');
+  if (!isAuthorized) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
     );
   }
 
@@ -107,8 +123,8 @@ export async function PATCH(request: NextRequest) {
 
     await logAdminAction({
       action: 'update_submission_status',
-      actorEmail: session.email,
-      actorName: session.name,
+      actorEmail: user.primaryEmail || '',
+      actorName: user.displayName || '',
       targetId: id,
       result: 'success',
       details: {
@@ -128,8 +144,8 @@ export async function PATCH(request: NextRequest) {
     if (submissionId && newStatus) {
       await logAdminAction({
         action: 'update_submission_status',
-        actorEmail: session?.email,
-        actorName: session?.name,
+        actorEmail: user?.primaryEmail || '',
+        actorName: user?.displayName || '',
         targetId: submissionId,
         result: 'error',
         details: { newStatus },
@@ -143,12 +159,21 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const session = verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const user = await stackServerApp.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
+    );
+  }
+
+  // Check if user is authorized to access admin
+  const isAuthorized = await isUserAuthorized(user.primaryEmail || '');
+  if (!isAuthorized) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      { status: 403 }
     );
   }
 
@@ -169,10 +194,13 @@ export async function DELETE(request: NextRequest) {
     // Delete submission from Airtable
     await deleteSubmission(id);
 
+    // Emit real-time event for billboard update
+    emitDeletedPost(id);
+
     await logAdminAction({
       action: 'delete_submission',
-      actorEmail: session.email,
-      actorName: session.name,
+      actorEmail: user.primaryEmail || '',
+      actorName: user.displayName || '',
       targetId: id,
       result: 'success',
     });
@@ -186,8 +214,8 @@ export async function DELETE(request: NextRequest) {
     if (submissionId) {
       await logAdminAction({
         action: 'delete_submission',
-        actorEmail: session?.email,
-        actorName: session?.name,
+        actorEmail: user?.primaryEmail || '',
+        actorName: user?.displayName || '',
         targetId: submissionId,
         result: 'error',
       });

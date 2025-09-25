@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackServerApp } from "../stack/server";
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
@@ -41,7 +43,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={inter.className}><StackProvider app={stackServerApp}><StackTheme>
         {posthogKey ? (
           <>
             <Script src={posthogScriptSrc} strategy="afterInteractive" />
@@ -59,7 +61,7 @@ export default function RootLayout({
           </>
         ) : null}
         {children}
-      </body>
+      </StackTheme></StackProvider></body>
     </html>
   );
 }

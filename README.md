@@ -41,6 +41,8 @@ Create a `.env.local` file in the root directory:
 AIRTABLE_API_KEY=your_airtable_api_key
 AIRTABLE_BASE_ID=your_airtable_base_id
 AIRTABLE_TABLE_NAME=Submissions
+AIRTABLE_USERS_TABLE_NAME=Users
+AIRTABLE_AUDIT_TABLE_NAME=Admin Audit Log
 
 # ImageKit Configuration
 IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
@@ -52,13 +54,11 @@ WHATSAPP_ACCESS_TOKEN=your_whatsapp_access_token
 WHATSAPP_PHONE_NUMBER_ID=your_whatsapp_phone_number_id
 WHATSAPP_VERIFY_TOKEN=your_whatsapp_verify_token
 
-# Admin Authentication
+# Admin Authentication & Authorization
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
 ADMIN_SESSION_SECRET=a_long_random_string_used_to_sign_admin_sessions
+# Fallback authorization (comma-separated emails)
 ADMIN_EMAILS=admin@example.com,second_admin@example.com
-
-# Audit Logging (optional)
-AIRTABLE_AUDIT_TABLE_NAME=Admin Audit Log
 
 # PostHog Analytics (optional)
 NEXT_PUBLIC_POSTHOG_KEY=phc_your_posthog_project_key
@@ -97,15 +97,34 @@ NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 3. Get your public key, private key, and URL endpoint from the dashboard
 4. Update the frame image path in the code if needed
 
-### 5. Admin Authentication & Audit Logging
+### 5. Admin Authentication & Authorization
 
 1. Enable the Google Identity Services API and create an OAuth client ID for a web application.
 2. Add the OAuth client ID to `NEXT_PUBLIC_GOOGLE_CLIENT_ID`.
 3. Generate a long random string and set it as `ADMIN_SESSION_SECRET`. This secret signs encrypted admin cookies.
-4. Provide a comma-separated list of authorized emails via `ADMIN_EMAILS`. Only these accounts can access `/admin`.
-5. (Optional) Configure `AIRTABLE_AUDIT_TABLE_NAME` to log every approve, reject, and delete action to Airtable. The recommended table schema is listed above.
+4. Configure user authorization using one of these methods:
+   - **Option A (Recommended)**: Create an Airtable users table and set `AIRTABLE_USERS_TABLE_NAME`
+   - **Option B**: Provide a comma-separated list of authorized emails via `ADMIN_EMAILS`
 
-With these values configured the admin dashboard will require a Google login and every moderation action will be recorded for auditing.
+## Airtable Users Table Setup (Option A)
+
+Create a table in your Airtable base with the following fields:
+- `Email` (Email field)
+- `Name` (Single line text)
+- `Role` (Single line text, e.g., "admin", "moderator")
+- `Is Active` (Checkbox field)
+
+Set `AIRTABLE_USERS_TABLE_NAME` to the name of this table. Only users with `Is Active` = TRUE will be able to access the admin dashboard.
+
+## Environment Variable Fallback (Option B)
+
+If no Airtable users table is configured, the system will fall back to checking the `ADMIN_EMAILS` environment variable (comma-separated list of email addresses).
+
+## Audit Logging (Optional)
+
+Configure `AIRTABLE_AUDIT_TABLE_NAME` to log every approve, reject, and delete action to Airtable. The recommended table schema is listed above.
+
+With these values configured the admin dashboard will require authentication and authorization before allowing access.
 
 ### 6. WhatsApp Business API Setup
 

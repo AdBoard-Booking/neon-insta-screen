@@ -20,6 +20,8 @@ export interface Submission {
 export const submissionsTable = base(process.env.AIRTABLE_TABLE_NAME!);
 const auditLogTableName = process.env.AIRTABLE_AUDIT_TABLE_NAME;
 const auditLogTable = auditLogTableName ? base(auditLogTableName) : null;
+const usersTableName = process.env.AIRTABLE_USERS_TABLE_NAME;
+const usersTable = usersTableName ? base(usersTableName) : null;
 
 interface AuditLogPayload {
   action: string;
@@ -187,5 +189,73 @@ export async function logAdminAction(payload: AuditLogPayload) {
     ]);
   } catch (error) {
     console.error('Failed to write admin audit log', error);
+  }
+}
+
+export interface AuthorizedUser {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+  isActive: boolean;
+}
+
+export async function isUserAuthorized(email: string): Promise<boolean> {
+  if (!usersTable) {
+    // Fallback to environment variable if no users table is configured
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+    return adminEmails.includes(email);
+  }
+
+  try {
+    const records = await usersTable.select({
+      filterByFormula: `AND({Email} = '${email}', {Is Active} = TRUE())`,
+    }).all();
+
+    return records.length > 0;
+  } catch (error) {
+    console.error('Failed to check user authorization in Airtable', error);
+    // Fallback to environment variable on error
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+    return adminEmails.includes(email);
+  }
+}
+
+export async function getAuthorizedUser(email: string): Promise<AuthorizedUser | null> {
+  if (!usersTable) {
+    // Fallback to environment variable if no users table is configured
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+    if (adminEmails.includes(email)) {
+      return {
+        id: email,
+        email,
+        name: email.split('@')[0],
+        role: 'admin',
+        isActive: true,
+      };
+    }
+    return null;
+  }
+
+  try {
+    const records = await usersTable.select({
+      filterByFormula: `AND({Email} = '${email}', {Is Active} = TRUE())`,
+    }).all();
+
+    if (records.length === 0) {
+      return null;
+    }
+
+    const record = records[0];
+    return {
+      id: record.id,
+      email: record.get('Email') as string,
+      name: record.get('Name') as string,
+      role: record.get('Role') as string,
+      isActive: record.get('Is Active') as boolean,
+    };
+  } catch (error) {
+    console.error('Failed to get authorized user from Airtable', error);
+    return null;
   }
 }

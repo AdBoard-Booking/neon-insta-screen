@@ -25,19 +25,21 @@ export default function BillboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const fomoBanner = useFOMOBanner();
-  useBillboardUpdates();
+  const { shouldRefresh, setShouldRefresh } = useBillboardUpdates();
 
   useEffect(() => {
     fetchApprovedSubmissions();
-    
-    // Initialize Socket.io server
-    fetch('/api/socket');
-    
-    // Set up polling for new submissions
-    const interval = setInterval(fetchApprovedSubmissions, 5000);
-    
-    return () => clearInterval(interval);
   }, []);
+
+  // Handle refresh when socket events are received
+  useEffect(() => {
+    console.log('shouldRefresh changed to:', shouldRefresh);
+    if (shouldRefresh) {
+      console.log('Refreshing submissions due to socket event');
+      fetchApprovedSubmissions();
+      setShouldRefresh(false);
+    }
+  }, [shouldRefresh]);
 
   useEffect(() => {
     // Generate QR code for upload page
@@ -73,10 +75,13 @@ export default function BillboardPage() {
 
   const fetchApprovedSubmissions = async () => {
     try {
+      console.log('Fetching approved submissions...');
       const response = await fetch('/api/billboard/approved');
       const data = await response.json();
       
+      console.log('Fetched data:', data);
       if (data.submissions) {
+        console.log('Setting submissions:', data.submissions.length);
         setSubmissions(data.submissions);
         setTotalCount(data.count);
         setIsLoading(false);
@@ -126,58 +131,56 @@ export default function BillboardPage() {
       {/* Main Layout - Split into 2/3 left and 1/3 right */}
       <div className="h-full flex">
         {/* Left Side - 2/3 width - Main Billboard Content */}
-        <div className="w-2/3 flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 text-white">
-          <div>
-            <h1 className="text-4xl font-bold">#MyBillboardMoment</h1>
-            <p className="text-xl opacity-90">Live Selfie Wall</p>
-          </div>
-          <div className="text-right">
-            <div className="flex items-center space-x-2 text-2xl font-bold">
-              <Users className="w-8 h-8" />
-              <span>{totalCount}</span>
-            </div>
-            <p className="text-sm opacity-90">selfies today</p>
-          </div>
-        </div>
-
-        {/* Main Display Area */}
-        <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-2/3 h-screen relative">
           {submissions.length > 0 ? (
-            <div className="relative">
+            <div className="relative w-full h-full">
               <motion.div
                 key={currentSubmission.id}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.5 }}
-                className="relative"
+                className="relative w-full h-full"
               >
-                {/* Framed Image */}
-                <div className="relative">
-                  <img
-                    src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
-                    alt={`${currentSubmission.name}'s selfie`}
-                    className="w-96 h-96 object-cover rounded-2xl shadow-2xl"
-                  />
-                  
-                  {/* Overlay with name and Instagram */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6 rounded-b-2xl">
-                    <div className="text-white">
-                      <h3 className="text-2xl font-bold mb-1">{currentSubmission.name}</h3>
-                      {currentSubmission.instagramHandle && (
-                        <div className="flex items-center space-x-2">
-                          <Instagram className="w-5 h-5" />
-                          <span className="text-lg">@{currentSubmission.instagramHandle}</span>
-                        </div>
-                      )}
+                {/* Full Screen Image */}
+                <img
+                  src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
+                  alt={`${currentSubmission.name}'s selfie`}
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Header Overlay */}
+                <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-6">
+                  <div className="flex justify-between items-center text-white">
+                    <div>
+                      <h1 className="text-4xl font-bold">#MyBillboardMoment</h1>
+                      <p className="text-xl opacity-90">Live Selfie Wall</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-2 text-2xl font-bold">
+                        <Users className="w-8 h-8" />
+                        <span>{totalCount}</span>
+                      </div>
+                      <p className="text-sm opacity-90">selfies today</p>
                     </div>
                   </div>
                 </div>
 
+                {/* Overlay with name and Instagram */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
+                  <div className="text-white">
+                    <h3 className="text-2xl font-bold mb-1">{currentSubmission.name}</h3>
+                    {currentSubmission.instagramHandle && (
+                      <div className="flex items-center space-x-2">
+                        <Instagram className="w-5 h-5" />
+                        <span className="text-lg">@{currentSubmission.instagramHandle}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Action Buttons */}
-                <div className="absolute top-4 right-4 flex space-x-2">
+                <div className="absolute top-20 right-4 flex space-x-2">
                   <button className="bg-white/20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white/30 transition-colors">
                     <Heart className="w-6 h-6" />
                   </button>
@@ -185,35 +188,36 @@ export default function BillboardPage() {
                     <Share2 className="w-6 h-6" />
                   </button>
                 </div>
-              </motion.div>
 
-              {/* Image Counter */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
-                {currentIndex + 1} / {submissions.length}
-              </div>
+                {/* Image Counter */}
+                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
+                  {currentIndex + 1} / {submissions.length}
+                </div>
+
+                {/* Footer Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-6 text-center text-white/80">
+                  <p className="text-lg">
+                    Upload your selfie at <span className="font-bold">billboard.example.com/upload</span>
+                  </p>
+                  <p className="text-sm mt-2">
+                    Or send via WhatsApp to +1 (555) 123-4567
+                  </p>
+                </div>
+              </motion.div>
             </div>
           ) : (
-            <div className="text-center text-white">
-              <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Instagram className="w-16 h-16" />
+            <div className="h-full flex items-center justify-center text-center text-white">
+              <div>
+                <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Instagram className="w-16 h-16" />
+                </div>
+                <h2 className="text-3xl font-bold mb-4">No selfies yet!</h2>
+                <p className="text-xl opacity-90">
+                  Be the first to share your selfie!
+                </p>
               </div>
-              <h2 className="text-3xl font-bold mb-4">No selfies yet!</h2>
-              <p className="text-xl opacity-90">
-                Be the first to share your selfie!
-              </p>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 text-center text-white/80">
-          <p className="text-lg">
-            Upload your selfie at <span className="font-bold">billboard.example.com/upload</span>
-          </p>
-          <p className="text-sm mt-2">
-            Or send via WhatsApp to +1 (555) 123-4567
-          </p>
-        </div>
         </div>
 
         {/* Right Side - 1/3 width - QR Code Section */}

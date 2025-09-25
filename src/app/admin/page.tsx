@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   CheckCircle,
   XCircle,
-  Eye,
   Instagram,
   MessageCircle,
   Globe,
@@ -14,20 +14,12 @@ import {
   Trash2,
   AlertTriangle,
   LogOut,
+  User,
 } from 'lucide-react';
+import { useUser } from '@stackframe/stack';
 
 declare global {
   interface Window {
-    google?: {
-      accounts?: {
-        id?: {
-          initialize: (config: { client_id: string; callback: (response: { credential?: string }) => void }) => void;
-          renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
-          prompt: () => void;
-          disableAutoSelect?: () => void;
-        };
-      };
-    };
     posthog?: {
       capture: (event: string, properties?: Record<string, unknown>) => void;
       identify?: (distinctId: string, properties?: Record<string, unknown>) => void;
@@ -55,12 +47,6 @@ interface Stats {
   rejected: number;
 }
 
-interface AdminSession {
-  email: string;
-  name?: string;
-  picture?: string;
-  sub?: string;
-}
 
 const initialStats: Stats = { total: 0, pending: 0, approved: 0, rejected: 0 };
 
@@ -77,22 +63,19 @@ const capturePosthogEvent = (event: string, properties?: Record<string, unknown>
 };
 
 export default function AdminPage() {
-  const [session, setSession] = useState<AdminSession | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [isSigningIn, setIsSigningIn] = useState(false);
-  const googleButtonRef = useRef<HTMLDivElement | null>(null);
-
+  const user = useUser({
+    or:"redirect"
+  })
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [stats, setStats] = useState<Stats>(initialStats);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorizing, setIsAuthorizing] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showRejectConfirm, setShowRejectConfirm] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     if (!notification) {
@@ -103,62 +86,42 @@ export default function AdminPage() {
     return () => clearTimeout(timer);
   }, [notification]);
 
-  const identifyUserWithPosthog = useCallback((activeSession: AdminSession | null) => {
-    if (!activeSession || typeof window === 'undefined' || !window.posthog) {
+  const checkAuthorization = useCallback(async () => {
+    if (!user?.primaryEmail) {
+      setIsAuthorizing(false);
       return;
     }
 
     try {
-      window.posthog.identify?.(activeSession.email, {
-        email: activeSession.email,
-        name: activeSession.name,
-      });
-    } catch (error) {
-      console.error('Failed to identify user in PostHog', error);
-    }
-  }, []);
-
-  const handleUnauthorized = useCallback(() => {
-    setSession(null);
-    setAuthError('Your session has expired. Please sign in again.');
-    setAuthLoading(false);
-  }, []);
-
-  const fetchSession = useCallback(async () => {
-    try {
-      setAuthLoading(true);
-      const response = await fetch('/api/auth/session', { cache: 'no-store' });
-
-      if (!response.ok) {
-        setSession(null);
-        return;
+      const response = await fetch(`/api/auth/check?email=${encodeURIComponent(user.primaryEmail)}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authorized) {
+          setIsAuthorized(true);
+        } else {
+          setIsAuthorized(false);
+        }
+      } else if (response.status === 403) {
+        setIsAuthorized(false);
+      } else {
+        setIsAuthorized(false);
       }
-
-      const data = await response.json();
-      setSession(data.session as AdminSession);
-      setAuthError(null);
     } catch (error) {
-      console.error('Failed to load admin session', error);
-      setSession(null);
+      console.error('Error checking authorization:', error);
+      setIsAuthorized(false);
     } finally {
-      setAuthLoading(false);
+      setIsAuthorizing(false);
     }
-  }, []);
+  }, [user?.primaryEmail]);
 
-  useEffect(() => {
-    fetchSession();
-  }, [fetchSession]);
-
-  useEffect(() => {
-    identifyUserWithPosthog(session);
-  }, [session, identifyUserWithPosthog]);
 
   const fetchSubmissions = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/submissions', { cache: 'no-store' });
 
-      if (response.status === 401) {
-        handleUnauthorized();
+      if (!response.ok) {
+        console.error('Failed to fetch submissions');
         setIsLoading(false);
         return;
       }
@@ -178,152 +141,37 @@ export default function AdminPage() {
       });
       setIsLoading(false);
     }
-  }, [handleUnauthorized]);
+  }, []);
 
   useEffect(() => {
-    if (!session) {
-      setSubmissions([]);
-      setStats(initialStats);
-      setIsLoading(false);
+    checkAuthorization();
+  }, [checkAuthorization]);
+
+  useEffect(() => {
+    if (!isAuthorized || isAuthorizing) {
       return;
     }
 
     setIsLoading(true);
     fetchSubmissions();
 
-    const interval = setInterval(() => {
-      fetchSubmissions();
-    }, 10000);
+    
+  }, [isAuthorized, isAuthorizing, fetchSubmissions]);
 
-    return () => clearInterval(interval);
-  }, [session, fetchSubmissions]);
-
-  const initializeGoogleSignIn = useCallback(() => {
-    if (!googleButtonRef.current) {
-      return;
-    }
-
-    if (!googleClientId) {
-      setAuthError('Google client ID is not configured.');
-      return;
-    }
-
-    if (!window.google || !window.google.accounts?.id) {
-      setAuthError('Unable to load Google sign-in. Please try again.');
-      return;
-    }
-
-    if (googleButtonRef.current.childElementCount === 0) {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: async ({ credential }) => {
-          if (!credential) {
-            setAuthError('No Google credential was returned.');
-            return;
-          }
-
-          setIsSigningIn(true);
-          setAuthError(null);
-          capturePosthogEvent('admin_login_attempt', { provider: 'google' });
-
-          try {
-            const response = await fetch('/api/auth/google', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ credential }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-              const message = data.error ?? 'Failed to sign in with Google.';
-              setAuthError(message);
-              capturePosthogEvent('admin_login_failure', { reason: message });
-              return;
-            }
-
-            setSession(data.session as AdminSession);
-            setAuthError(null);
-            capturePosthogEvent('admin_login_success', { email: data.session?.email });
-          } catch (error) {
-            console.error('Failed to sign in with Google', error);
-            setAuthError('An unexpected error occurred during sign-in.');
-            capturePosthogEvent('admin_login_failure', { reason: 'network_error' });
-          } finally {
-            setIsSigningIn(false);
-          }
-        },
-      });
-
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        type: 'standard',
-        shape: 'rectangular',
-        text: 'signin_with',
-        width: 320,
-      });
-    }
-
-    window.google.accounts.id.prompt();
-  }, [googleClientId]);
-
-  useEffect(() => {
-    if (authLoading || session) {
-      return;
-    }
-
-    if (window.google && window.google.accounts?.id) {
-      initializeGoogleSignIn();
-      return;
-    }
-
-    const existingScript = document.getElementById('google-identity-services') as HTMLScriptElement | null;
-    if (existingScript) {
-      existingScript.addEventListener('load', initializeGoogleSignIn);
-      return () => existingScript.removeEventListener('load', initializeGoogleSignIn);
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.id = 'google-identity-services';
-    script.onload = initializeGoogleSignIn;
-    script.onerror = () => {
-      setAuthError('Failed to load Google sign-in. Please check your network connection.');
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      script.onload = null;
-    };
-  }, [session, authLoading, initializeGoogleSignIn]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      capturePosthogEvent('admin_logout', { email: session?.email });
-    } catch (error) {
-      console.error('Failed to log out', error);
-    } finally {
-      window.google?.accounts?.id?.disableAutoSelect?.();
-      setSession(null);
-      setSubmissions([]);
-      setStats(initialStats);
-    }
-  };
 
   const handleManualRefresh = () => {
-    if (!session) {
-      return;
-    }
     setIsLoading(true);
     capturePosthogEvent('admin_manual_refresh');
     fetchSubmissions();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await user?.signOut();
+      // Redirect will be handled by StackAuth
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const updateSubmissionStatus = async (id: string, status: 'approved' | 'rejected') => {
@@ -344,8 +192,8 @@ export default function AdminPage() {
         body: JSON.stringify({ id, status }),
       });
 
-      if (response.status === 401) {
-        handleUnauthorized();
+      if (!response.ok) {
+        console.error('Failed to update submission');
         return;
       }
 
@@ -416,8 +264,8 @@ export default function AdminPage() {
         method: 'DELETE',
       });
 
-      if (response.status === 401) {
-        handleUnauthorized();
+      if (!response.ok) {
+        console.error('Failed to delete submission');
         return;
       }
 
@@ -480,51 +328,29 @@ export default function AdminPage() {
 
   const getSourceIcon = (source: string) => (source === 'whatsapp' ? MessageCircle : Globe);
 
-  if (authLoading) {
+
+  // Show loading while checking authorization
+  if (isAuthorizing) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600">Verifying access...</p>
         </div>
       </div>
     );
   }
 
-  if (!session) {
+  // Redirect to unauthorized page if not authorized
+  if (!isAuthorized) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/unauthorized';
+    }
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold text-gray-900">Admin Access</h1>
-            <p className="text-gray-600 mt-2">
-              Sign in with your authorized Google account to manage submissions.
-            </p>
-          </div>
-
-          {authError && (
-            <div className="mt-6 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-              {authError}
-            </div>
-          )}
-
-          <div className="mt-6 flex justify-center">
-            {googleClientId ? (
-              <div ref={googleButtonRef} className="flex justify-center" />
-            ) : (
-              <div className="text-sm text-red-600">
-                Google Sign-In is not configured. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to enable admin login.
-              </div>
-            )}
-          </div>
-
-          {isSigningIn && (
-            <p className="mt-4 text-sm text-gray-500 text-center">Signing you in...</p>
-          )}
-
-          <p className="mt-6 text-xs text-gray-400 text-center">
-            Only pre-approved email addresses can access this dashboard.
-          </p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Redirecting...</p>
         </div>
       </div>
     );
@@ -551,25 +377,46 @@ export default function AdminPage() {
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-600">Manage selfie submissions and billboard content</p>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="text-sm text-gray-600 text-left sm:text-right">
-                <p className="font-medium text-gray-900">{session.name ?? session.email}</p>
-                <p>{session.email}</p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              {/* User Info */}
+              <div className="flex items-center space-x-3 bg-gray-50 rounded-lg px-4 py-2 w-full sm:w-auto">
+                <div className="flex items-center space-x-3">
+                  {user?.profileImageUrl ? (
+                    <Image
+                      src={user.profileImageUrl}
+                      alt={user.displayName || 'User'}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-purple-600" />
+                    </div>
+                  )}
+                  <div className="text-sm min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{user?.displayName || 'Admin'}</p>
+                    <p className="text-gray-500 truncate">{user?.primaryEmail}</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleManualRefresh}
-                  className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex-1 sm:flex-none"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  <span>Refresh</span>
+                  <span className="hidden sm:inline">Refresh</span>
                 </button>
+                
                 <button
                   onClick={handleLogout}
-                  className="flex items-center space-x-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-center space-x-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex-1 sm:flex-none"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Sign out</span>
+                  <span className="hidden sm:inline">Logout</span>
                 </button>
               </div>
             </div>
@@ -694,9 +541,11 @@ export default function AdminPage() {
                   return (
                     <tr key={submission.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <img
+                        <Image
                           src={submission.imageUrl}
                           alt={submission.name}
+                          width={64}
+                          height={64}
                           className="w-16 h-16 object-cover rounded-lg"
                         />
                       </td>
