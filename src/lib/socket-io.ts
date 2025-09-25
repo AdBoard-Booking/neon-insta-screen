@@ -11,7 +11,7 @@ export const setSocketIO = (socketIO: ServerIO) => {
   io = socketIO;
 };
 
-export const emitToBillboard = (event: string, data: Record<string, any>) => {
+export const emitToBillboard = (event: string, data: Record<string, unknown>) => {
   if (io) {
     io.to('billboard').emit(event, data);
   }
@@ -25,7 +25,7 @@ export const emitNewUpload = (name: string) => {
   });
 };
 
-export const emitApprovedPost = (submission: Record<string, any>) => {
+export const emitApprovedPost = (submission: Record<string, unknown>) => {
   emitToBillboard(SocketEvents.APPROVED_POST, {
     ...submission,
     timestamp: Date.now(),

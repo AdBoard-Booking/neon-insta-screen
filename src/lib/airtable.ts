@@ -1,4 +1,4 @@
-import Airtable from 'airtable';
+import Airtable, { FieldSet } from 'airtable';
 
 const base = new Airtable({
   apiKey: process.env.AIRTABLE_API_KEY!,
@@ -18,9 +18,20 @@ export interface Submission {
 }
 
 export const submissionsTable = base(process.env.AIRTABLE_TABLE_NAME!);
+const auditLogTableName = process.env.AIRTABLE_AUDIT_TABLE_NAME;
+const auditLogTable = auditLogTableName ? base(auditLogTableName) : null;
+
+interface AuditLogPayload {
+  action: string;
+  actorEmail?: string;
+  actorName?: string;
+  targetId?: string;
+  details?: Record<string, unknown>;
+  result?: string;
+}
 
 export async function createSubmission(data: Omit<Submission, 'id' | 'createdAt'>) {
-  const fields: Record<string, any> = {
+  const fields: FieldSet = {
     Name: data.name,
     'Instagram Handle': data.instagramHandle || '',
     'Image URL': data.imageUrl,
@@ -49,7 +60,7 @@ export async function createSubmission(data: Omit<Submission, 'id' | 'createdAt'
 }
 
 export async function updateSubmissionStatus(id: string, status: 'approved' | 'rejected', framedImageUrl?: string) {
-  const updateData: Record<string, any> = {
+  const updateData: FieldSet = {
     Status: status,
   };
 
@@ -61,7 +72,7 @@ export async function updateSubmissionStatus(id: string, status: 'approved' | 'r
   } else if (status === 'rejected') {
     // Clear the Approved At field by setting it to null
     // This will remove any existing approval date
-    updateData['Approved At'] = null;
+    updateData['Approved At'] = '';
   }
 
   const record = await submissionsTable.update([
@@ -120,7 +131,7 @@ export async function deleteSubmission(id: string) {
 
 export async function getSubmissionStats() {
   const records = await submissionsTable.select().all();
-  
+
   const stats = {
     total: records.length,
     pending: 0,
@@ -136,4 +147,45 @@ export async function getSubmissionStats() {
   });
 
   return stats;
+}
+
+export async function logAdminAction(payload: AuditLogPayload) {
+  if (!auditLogTable) {
+    return;
+  }
+
+  try {
+    const fields: FieldSet = {
+      Action: payload.action,
+      // Timestamp: new Date().toISOString(),
+    };
+
+    if (payload.actorEmail) {
+      fields['Actor Email'] = payload.actorEmail;
+    }
+
+    if (payload.actorName) {
+      fields['Actor Name'] = payload.actorName;
+    }
+
+    if (payload.targetId) {
+      fields['Target ID'] = payload.targetId;
+    }
+
+    if (payload.result) {
+      fields.Result = payload.result;
+    }
+
+    if (payload.details && Object.keys(payload.details).length > 0) {
+      fields.Details = JSON.stringify(payload.details);
+    }
+
+    await auditLogTable.create([
+      {
+        fields,
+      },
+    ]);
+  } catch (error) {
+    console.error('Failed to write admin audit log', error);
+  }
 }
