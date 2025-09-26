@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Instagram, Heart, Share2, Users, QrCode } from 'lucide-react';
 import { useFOMOBanner, useBillboardUpdates } from '@/lib/useSocket';
 import QRCode from 'qrcode';
+import CelebrationOverlay from '@/components/CelebrationOverlay';
 
 interface Submission {
   id: string;
@@ -24,6 +25,8 @@ export default function BillboardPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationName, setCelebrationName] = useState('');
   const fomoBanner = useFOMOBanner();
   const { shouldRefresh, setShouldRefresh } = useBillboardUpdates();
 
@@ -40,6 +43,14 @@ export default function BillboardPage() {
       setShouldRefresh(false);
     }
   }, [shouldRefresh]);
+
+  // Handle celebration when FOMO banner shows new upload
+  useEffect(() => {
+    if (fomoBanner) {
+      setCelebrationName(fomoBanner.name);
+      setShowCelebration(true);
+    }
+  }, [fomoBanner]);
 
   useEffect(() => {
     // Generate QR code for upload page
@@ -108,6 +119,13 @@ export default function BillboardPage() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 overflow-hidden relative">
+      {/* Celebration Overlay */}
+      <CelebrationOverlay
+        isVisible={showCelebration}
+        name={celebrationName}
+        onComplete={() => setShowCelebration(false)}
+      />
+
       {/* FOMO Banner */}
       <AnimatePresence>
         {fomoBanner && (
@@ -221,7 +239,7 @@ export default function BillboardPage() {
         </div>
 
         {/* Right Side - 1/3 width - QR Code Section */}
-        <div className="w-1/3 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-purple-800/30 to-indigo-800/30 border-l border-white/10">
+        <div className="w-1/3 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-purple-800/30 to-indigo-800/30 border-l border-white/10 relative">
           <div className="text-center text-white flex flex-col items-center justify-center h-full">
             <QrCode className="w-16 h-16 mx-auto mb-6 text-white/80" />
             <h2 className="text-3xl font-bold mb-4">Scan to Upload</h2>
@@ -249,6 +267,16 @@ export default function BillboardPage() {
               <p>Point your camera at the QR code</p>
               <p className="mt-1">or visit: <span className="font-mono text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/upload</span></p>
             </div>
+          </div>
+
+          {/* Powered by Logo - Bottom Right */}
+          <div className="absolute bottom-4 right-4 flex items-center space-x-2 text-white/70 text-sm">
+            <span>Powered by</span>
+            <img 
+              src="https://ik.imagekit.io/teh6pz4rx/adboard-booking-web/AdBoardLogo/logo1.png"
+              alt="AdBoard Logo"
+              className="h-6 w-auto opacity-80 hover:opacity-100 transition-opacity"
+            />
           </div>
         </div>
       </div>

@@ -22,9 +22,20 @@ export const emitToBillboard = (event: string, data: Record<string, unknown>) =>
 };
 
 export const emitNewUpload = (name: string) => {
+  const messages = [
+    `🔥 ${name} just joined the billboard! Don't miss out!`,
+    `📸 ${name} is now on the big screen! Your turn next?`,
+    `✨ ${name} just uploaded! Join the fun!`,
+    `🎉 ${name} is trending! Upload your selfie now!`,
+    `💫 ${name} just shared their moment! Be next!`,
+    `🌟 ${name} is live! Don't be left behind!`
+  ];
+  
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+  
   emitToBillboard(SocketEvents.NEW_UPLOAD, {
     name,
-    message: `${name} just uploaded a selfie 👀`,
+    message: randomMessage,
     timestamp: Date.now(),
   });
 };
