@@ -24,7 +24,7 @@ app.prepare().then(() => {
 
   const io = new Server(httpServer, {
     cors: {
-      origin: dev ? 'http://localhost:3000' : 'https://yourdomain.com',
+      origin: dev ? 'http://localhost:3000' : 'https://tulip.adboardtools.com',
       methods: ['GET', 'POST'],
     },
   });
