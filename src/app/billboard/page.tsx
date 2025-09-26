@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Instagram, Heart, Share2, Users, QrCode } from 'lucide-react';
 import { useFOMOBanner, useBillboardUpdates } from '@/lib/useSocket';
+import { usePageUnloadCleanup } from '@/lib/socket-cleanup';
 import QRCode from 'qrcode';
 import CelebrationOverlay from '@/components/CelebrationOverlay';
 
@@ -29,6 +30,9 @@ export default function BillboardPage() {
   const [celebrationName, setCelebrationName] = useState('');
   const fomoBanner = useFOMOBanner();
   const { shouldRefresh, setShouldRefresh } = useBillboardUpdates();
+  
+  // Setup page unload cleanup
+  usePageUnloadCleanup();
 
   useEffect(() => {
     fetchApprovedSubmissions();
@@ -167,7 +171,7 @@ export default function BillboardPage() {
                 <img
                   src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
                   alt={`${currentSubmission.name}'s selfie`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
                 
                 {/* Header Overlay */}
@@ -260,7 +264,7 @@ export default function BillboardPage() {
           <div className="absolute bottom-4 right-4 flex items-center space-x-2 text-white/70 text-sm">
             <span>Powered by</span>
             <img 
-              src="https://ik.imagekit.io/teh6pz4rx/adboard-booking-web/AdBoardLogo/logo1.png"
+              src="https://ik.imagekit.io/teh6pz4rx/adboard-booking-web/AdBoardLogo/logo2.png"
               alt="AdBoard Logo"
               className="h-6 w-auto opacity-80 hover:opacity-100 transition-opacity"
             />

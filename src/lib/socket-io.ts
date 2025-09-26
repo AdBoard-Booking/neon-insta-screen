@@ -17,7 +17,14 @@ export const setSocketIO = (socketIO: ServerIO) => {
 export const emitToBillboard = (event: string, data: Record<string, unknown>) => {
   const io = getSocketIO();
   if (io) {
-    io.to('billboard').emit(event, data);
+    try {
+      io.to('billboard').emit(event, data);
+      console.log(`Emitted ${event} to billboard room:`, data);
+    } catch (error) {
+      console.error(`Error emitting ${event} to billboard:`, error);
+    }
+  } else {
+    console.warn('Socket.io instance not available for billboard emission');
   }
 };
 
@@ -42,6 +49,7 @@ export const emitNewUpload = (name: string) => {
 
 export const emitApprovedPost = (submission: Record<string, unknown>) => {
   console.log('Emitting approved post:', submission);
+  const io = getSocketIO();
   console.log('Socket IO instance:', io ? 'exists' : 'null');
   emitToBillboard(SocketEvents.BILLBOARD_UPDATE, {
     ...submission,
