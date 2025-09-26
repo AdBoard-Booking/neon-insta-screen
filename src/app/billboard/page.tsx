@@ -156,7 +156,7 @@ export default function BillboardPage() {
       {/* Main Layout - Split into 2/3 left and 1/3 right */}
       <div className="h-full flex">
         {/* Left Side - 2/3 width - Main Billboard Content */}
-        <div className="w-2/3 h-screen pb-20 relative p-8 pt-10">
+        <div className="w-2/3 h-screen relative p-8">
           {/* Header - Outside Frame */}
           <div className="absolute top-8 left-8 right-8 z-20">
             <div className="flex justify-between items-center text-white">
@@ -174,37 +174,28 @@ export default function BillboardPage() {
             </div>
           </div>
 
-          {/* Big Frame Container - Image with Bottom Info */}
-          <div className="w-full h-full border-8 border-white/20 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm bg-gradient-to-br from-white/5 to-white/10 relative mt-16">
-            {/* Frame Corner Decorations */}
-            <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-white/40 rounded-tl-lg"></div>
-            <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-white/40 rounded-tr-lg"></div>
-            <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-white/40 rounded-bl-lg"></div>
-            <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-white/40 rounded-br-lg"></div>
-            
-            {submissions.length > 0 ? (
-              <div className="relative w-full h-full">
-                <motion.div
-                  key={currentSubmission.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.5 }}
-                  className="relative w-full h-full"
-                >
-                  {/* Full Screen Image */}
-                  <img
-                    src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
-                    alt={`${currentSubmission.name}'s selfie`}
-                    className="w-full h-full object-contain"
-                  />
-                  
-                  {/* Bottom Info - Inside Frame */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                    <div className="flex justify-between items-end">
-                      {/* Name and Instagram */}
-                      <div className="text-white">
-                        <h3 className="text-2xl font-bold mb-1">{currentSubmission.name}</h3>
+          {/* Content Layout - Side by Side */}
+          <div className="flex h-full pt-0">
+            {/* Left Content Area */}
+            <div className="w-1/3 pr-6 flex flex-col justify-center">
+              <div className="text-white space-y-8">
+               
+
+                {/* Stats and Info */}
+                <div className="space-y-6">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+                    <h3 className="text-2xl font-bold mb-4">
+                      Only {10 - totalCount} FREE spots left for today.
+                    </h3>
+                    
+                  </div>
+
+                  {/* Current User Info */}
+                  {submissions.length > 0 && (
+                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+                      <h3 className="text-xl font-bold mb-4">Now Showing</h3>
+                      <div className="space-y-2">
+                        <h4 className="text-2xl font-bold text-pink-300">{currentSubmission.name}</h4>
                         {currentSubmission.instagramHandle && (
                           <div className="flex items-center space-x-2">
                             <Instagram className="w-5 h-5" />
@@ -212,28 +203,124 @@ export default function BillboardPage() {
                           </div>
                         )}
                       </div>
-                      
-                      {/* Image Counter */}
-                      <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
-                        {currentIndex + 1} / {submissions.length}
-                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              </div>
-            ) : (
-              <div className="h-full flex items-center justify-center text-center text-white">
-                <div>
-                  <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Instagram className="w-16 h-16" />
-                  </div>
-                  <h2 className="text-3xl font-bold mb-4">No selfies yet!</h2>
-                  <p className="text-xl opacity-90">
-                    Be the first to share your selfie!
-                  </p>
+                  )}
+
+                
                 </div>
               </div>
-            )}
+            </div>
+
+            <div className="w-2/3 flex h-full justify-center">
+  {submissions.length > 0 ? (
+    <div className="relative h-full flex items-center justify-center">
+      <motion.div
+        key={currentSubmission.id}
+        initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        exit={{ opacity: 0, scale: 0.8, rotate: 5 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="relative h-full inline-block"
+      >
+        {/* Instagram Style Frame - shrink to image width */}
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col w-fit">
+          
+          {/* Top Section - Profile Info */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center space-x-3">
+              {/* Profile Picture */}
+              <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300">
+                <img
+                  src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Username */}
+              <div>
+                <h3 className="font-semibold text-gray-900">{currentSubmission.name}</h3>
+                {currentSubmission.instagramHandle && (
+                  <p className="text-sm text-gray-600">@{currentSubmission.instagramHandle}</p>
+                )}
+              </div>
+            </div>
+            {/* Options Menu */}
+            <div className="text-gray-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Main Image Area - No horizontal padding */}
+          <div className="block">
+            <img
+              src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
+              alt={`${currentSubmission.name}'s selfie`}
+              className="block object-contain"
+              style={{ width: "auto", height: "auto" , maxHeight: "calc(100vh - 190px)"}}
+            />
+          </div>
+
+          {/* Bottom Section - Interaction Buttons */}
+          <div className="px-4 py-3 flex-shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-4">
+                {/* Like Button */}
+                <button className="text-red-500 hover:text-red-600 transition-colors">
+                  <Heart className="w-6 h-6 fill-current" />
+                </button>
+                {/* Comment Button */}
+                <button className="text-gray-600 hover:text-gray-800 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                </button>
+                {/* Share Button */}
+                <button className="text-gray-600 hover:text-gray-800 transition-colors">
+                  <Share2 className="w-6 h-6" />
+                </button>
+              </div>
+              {/* Save Button */}
+              <button className="text-gray-600 hover:text-gray-800 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Image Counter - Outside Frame */}
+        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
+          {currentIndex + 1} / {submissions.length}
+        </div>
+      </motion.div>
+    </div>
+  ) : (
+    <div className="text-center text-white flex items-center justify-center h-full">
+      <div>
+        <div className=" h-80 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-6">
+          <Instagram className="w-16 h-16" />
+        </div>
+        <h2 className="text-3xl font-bold mb-4">No selfies yet!</h2>
+        <p className="text-xl opacity-90">Be the first to share your selfie!</p>
+      </div>
+    </div>
+  )}
+</div>
+
+
           </div>
         </div>
 
