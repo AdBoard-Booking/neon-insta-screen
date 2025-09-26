@@ -3,6 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Camera, Instagram, User, CheckCircle, RotateCcw, MessageCircle, Upload, X } from 'lucide-react';
 import Image from 'next/image';
+import LoginDialog from '@/components/LoginDialog';
+import { stackClientApp } from '@/stack/client';
+import Link from 'next/link';
+import { SignIn } from '@stackframe/stack';
 
 export default function UploadPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +24,9 @@ export default function UploadPage() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [uploadMode, setUploadMode] = useState<'camera' | 'file'>('camera');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showReuploadMessage, setShowReuploadMessage] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +38,44 @@ export default function UploadPage() {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
+
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await stackClientApp.getUser();
+        const isAuth = !!user;
+        setIsAuthenticated(isAuth);
+        
+        // If user is authenticated and there's pending form data, show reupload message
+        if (isAuth) {
+          const pendingSubmission = localStorage.getItem('pendingSubmission');
+          if (pendingSubmission) {
+            try {
+              const storedData = JSON.parse(pendingSubmission);
+              // Restore form data (except image)
+              setFormData(prev => ({
+                ...prev,
+                name: storedData.name || '',
+                instagramHandle: storedData.instagramHandle || '',
+                whatsappContact: storedData.whatsappContact || '',
+                consent: storedData.consent || false,
+              }));
+              localStorage.removeItem('pendingSubmission');
+              setShowReuploadMessage(true);
+            } catch (error) {
+              console.error('Error processing pending submission:', error);
+              localStorage.removeItem('pendingSubmission');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Cleanup camera stream on component unmount
   useEffect(() => {
@@ -164,6 +209,23 @@ export default function UploadPage() {
       return;
     }
 
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      // Store form data in localStorage for after login
+      const formDataToStore = {
+        ...formData,
+        image: null, // Can't store File object in localStorage, will need to re-upload
+      };
+      localStorage.setItem('pendingSubmission', JSON.stringify(formDataToStore));
+      setShowLoginDialog(true);
+      return;
+    }
+
+    // Proceed with submission if authenticated
+    await submitForm();
+  };
+
+  const submitForm = async () => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
@@ -172,7 +234,9 @@ export default function UploadPage() {
       submitData.append('name', formData.name);
       submitData.append('instagramHandle', formData.instagramHandle);
       submitData.append('whatsappContact', formData.whatsappContact);
-      submitData.append('image', formData.image);
+      if (formData.image) {
+        submitData.append('image', formData.image);
+      }
       submitData.append('source', 'web');
       submitData.append('consent', formData.consent.toString());
 
@@ -209,20 +273,12 @@ export default function UploadPage() {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="mb-6">
-            <Image
-              src="https://ik.imagekit.io/teh6pz4rx/adboard-booking-web/AdBoardLogo/logo2.png"
-              alt="AdBoard Logo"
-              width={120}
-              height={60}
-              className="mx-auto"
-              unoptimized
-            />
-          </div>
+         
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
             {uploadMode === 'camera' ? (
               <Camera className="w-8 h-8 text-white" />
@@ -258,10 +314,33 @@ export default function UploadPage() {
           </div>
         )}
 
+        {showReuploadMessage && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center">
+              <CheckCircle className="w-5 h-5 text-blue-500 mr-2" />
+              <div>
+                <p className="text-blue-700 font-medium">Welcome back!</p>
+                <p className="text-blue-600 text-sm">
+                  Your form data has been restored. Please upload your photo again to submit.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowReuploadMessage(false)}
+                className="ml-auto text-blue-500 hover:text-blue-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
        
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
+
+          
+
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
               Your Name *
             </label>
@@ -516,6 +595,20 @@ export default function UploadPage() {
           </button>
         </form>
 
+        <div className="mt-6 flex flex-col items-center">
+              Powered by
+              <Link href={'https://www.adboardbooking.com'}>
+            <Image
+              src="https://ik.imagekit.io/teh6pz4rx/adboard-booking-web/AdBoardLogo/logo1.png"
+              alt="AdBoard Logo"
+              width={120}
+              height={60}
+              className="mx-auto"
+              unoptimized
+            />
+            </Link>
+          </div>
+
         {/* <div className="mt-6 text-center">
           <p className="text-sm text-gray-500">
             Or send your selfie via WhatsApp to{' '}
@@ -523,6 +616,12 @@ export default function UploadPage() {
           </p>
         </div> */}
       </div>
+
+      {/* Login Dialog */}
+      <LoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+      />
     </div>
   );
 }

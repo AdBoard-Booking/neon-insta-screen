@@ -16,10 +16,17 @@ export const setSocketIO = (socketIO: ServerIO) => {
 
 export const emitToBillboard = (event: string, data: Record<string, unknown>) => {
   const io = getSocketIO();
+  console.log(`Attempting to emit ${event} to billboard room. IO instance available:`, !!io);
+  
   if (io) {
     try {
+      // Get the number of clients in the billboard room
+      const billboardRoom = io.sockets.adapter.rooms.get('billboard');
+      const clientCount = billboardRoom ? billboardRoom.size : 0;
+      console.log(`Number of clients in billboard room: ${clientCount}`);
+      
       io.to('billboard').emit(event, data);
-      console.log(`Emitted ${event} to billboard room:`, data);
+      console.log(`Successfully emitted ${event} to billboard room:`, data);
     } catch (error) {
       console.error(`Error emitting ${event} to billboard:`, error);
     }

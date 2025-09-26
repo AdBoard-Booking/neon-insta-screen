@@ -10,7 +10,7 @@ declare global {
 }
 
 // Global socket instance to prevent multiple connections
-let globalSocketInstance: Socket | null = null;
+const globalSocketInstance: Socket | null = null;
 
 // Store reference in window for cleanup utility
 if (typeof window !== 'undefined') {
@@ -23,14 +23,8 @@ export const useSocket = () => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Use existing socket instance if available
-    if (globalSocketInstance && globalSocketInstance.connected) {
-      socketRef.current = globalSocketInstance;
-      setIsConnected(true);
-      return;
-    }
-
-    // Create new socket instance
+    // Always create a new socket instance for each component
+    // This ensures proper event listener setup
     const socketInstance = io(process.env.NODE_ENV === 'production' 
       ? 'https://tulip.adboardtools.com' 
       : 'http://localhost:3000', {
@@ -41,17 +35,10 @@ export const useSocket = () => {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       timeout: 20000,
-      forceNew: false, // Reuse existing connection
+      forceNew: false, // Allow connection reuse
     });
 
-    // Store globally and in ref
-    globalSocketInstance = socketInstance;
     socketRef.current = socketInstance;
-    
-    // Update window reference for cleanup utility
-    if (typeof window !== 'undefined') {
-      window.globalSocketInstance = globalSocketInstance;
-    }
 
     const handleConnect = () => {
       console.log('Connected to Socket.io server');
@@ -79,8 +66,6 @@ export const useSocket = () => {
     const handleReconnectFailed = () => {
       console.error('Failed to reconnect to Socket.io server');
       setIsConnected(false);
-      // Clear global instance if reconnection fails completely
-      globalSocketInstance = null;
     };
 
     // Add event listeners
@@ -94,12 +79,8 @@ export const useSocket = () => {
     setIsConnected(socketInstance.connected);
 
     return () => {
-      // Only cleanup if this is the last component using the socket
-      if (socketRef.current === globalSocketInstance) {
-        socketInstance.removeAllListeners();
-        // Don't close the connection immediately, let other components use it
-        // The connection will be closed when the page is unloaded
-      }
+      socketInstance.removeAllListeners();
+      socketInstance.disconnect();
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
@@ -116,13 +97,20 @@ export const useFOMOBanner = () => {
     message: string;
     timestamp: number;
   } | null>(null);
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!socket) return;
+    console.log('useFOMOBanner: socket available:', !!socket, 'isConnected:', isConnected);
+    
+    if (!socket) {
+      console.log('useFOMOBanner: No socket available, skipping event listener setup');
+      return;
+    }
 
     const handleNewUpload = (data: { name: string; message: string; timestamp: number }) => {
+      console.log('useFOMOBanner: Received NEW_UPLOAD event:', data);
+      
       // Clear any existing timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -142,9 +130,11 @@ export const useFOMOBanner = () => {
       }, 3000);
     };
 
+    console.log('useFOMOBanner: Setting up event listener for', SocketEvents.NEW_UPLOAD);
     socket.on(SocketEvents.NEW_UPLOAD, handleNewUpload);
 
     return () => {
+      console.log('useFOMOBanner: Cleaning up event listener');
       socket.off(SocketEvents.NEW_UPLOAD, handleNewUpload);
       // Clear timeout on cleanup
       if (timeoutRef.current) {
@@ -152,21 +142,26 @@ export const useFOMOBanner = () => {
         timeoutRef.current = null;
       }
     };
-  }, [socket]);
+  }, [socket, isConnected]);
 
   return fomoBanner;
 };
 
 export const useBillboardUpdates = () => {
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
   const [shouldRefresh, setShouldRefresh] = useState(false);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!socket) return;
+    console.log('useBillboardUpdates: socket available:', !!socket, 'isConnected:', isConnected);
+    
+    if (!socket) {
+      console.log('useBillboardUpdates: No socket available, skipping event listener setup');
+      return;
+    }
 
     const handleBillboardUpdate = (data: Record<string, unknown>) => {
-      console.log('Billboard update received:', data);
+      console.log('useBillboardUpdates: Received BILLBOARD_UPDATE event:', data);
       
       // Clear any existing refresh timeout to prevent duplicate refreshes
       if (refreshTimeoutRef.current) {
@@ -182,9 +177,11 @@ export const useBillboardUpdates = () => {
       }, 100);
     };
 
+    console.log('useBillboardUpdates: Setting up event listener for', SocketEvents.BILLBOARD_UPDATE);
     socket.on(SocketEvents.BILLBOARD_UPDATE, handleBillboardUpdate);
 
     return () => {
+      console.log('useBillboardUpdates: Cleaning up event listener');
       socket.off(SocketEvents.BILLBOARD_UPDATE, handleBillboardUpdate);
       // Clear timeout on cleanup
       if (refreshTimeoutRef.current) {
@@ -192,7 +189,7 @@ export const useBillboardUpdates = () => {
         refreshTimeoutRef.current = null;
       }
     };
-  }, [socket]);
+  }, [socket, isConnected]);
 
   return { shouldRefresh, setShouldRefresh };
 };

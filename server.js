@@ -83,11 +83,6 @@ app.prepare().then(() => {
   process.on('SIGTERM', gracefulShutdown);
   process.on('SIGINT', gracefulShutdown);
 
-  // Log connection stats periodically (optional, for monitoring)
-  setInterval(() => {
-    console.log(`Active connections: ${activeConnections.size}`);
-  }, 30000); // Every 30 seconds
-
   httpServer.listen(port, (err) => {
     if (err) throw err;
     console.log(`> Ready on http://${hostname}:${port}`);

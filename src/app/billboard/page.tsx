@@ -85,7 +85,7 @@ export default function BillboardPage() {
     if (submissions.length > 0) {
       const timer = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % submissions.length);
-      }, 5000); // Change image every 5 seconds
+      }, 10000); // Change image every 5 seconds
       
       return () => clearInterval(timer);
     }
@@ -156,77 +156,85 @@ export default function BillboardPage() {
       {/* Main Layout - Split into 2/3 left and 1/3 right */}
       <div className="h-full flex">
         {/* Left Side - 2/3 width - Main Billboard Content */}
-        <div className="w-2/3 h-screen relative">
-          {submissions.length > 0 ? (
-            <div className="relative w-full h-full">
-              <motion.div
-                key={currentSubmission.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.5 }}
-                className="relative w-full h-full"
-              >
-                {/* Full Screen Image */}
-                <img
-                  src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
-                  alt={`${currentSubmission.name}'s selfie`}
-                  className="w-full h-full object-contain"
-                />
-                
-                {/* Header Overlay */}
-                <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/70 to-transparent p-6">
-                  <div className="flex justify-between items-center text-white">
-                    <div>
-                      <h1 className="text-4xl font-bold">#MyBillboardMoment</h1>
-                      <p className="text-xl opacity-90">Live Selfie Wall</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center space-x-2 text-2xl font-bold">
-                        <Users className="w-8 h-8" />
-                        <span>{totalCount}</span>
-                      </div>
-                      <p className="text-sm opacity-90">selfies today</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Overlay with name and Instagram */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                  <div className="text-white">
-                    <h3 className="text-2xl font-bold mb-1">{currentSubmission.name}</h3>
-                    {currentSubmission.instagramHandle && (
-                      <div className="flex items-center space-x-2">
-                        <Instagram className="w-5 h-5" />
-                        <span className="text-lg">@{currentSubmission.instagramHandle}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                
-                {/* Image Counter */}
-                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
-                  {currentIndex + 1} / {submissions.length}
-                </div>
-
-               
-              </motion.div>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center text-center text-white">
+        <div className="w-2/3 h-screen pb-20 relative p-8 pt-10">
+          {/* Header - Outside Frame */}
+          <div className="absolute top-8 left-8 right-8 z-20">
+            <div className="flex justify-between items-center text-white">
               <div>
-                <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Instagram className="w-16 h-16" />
+                <h1 className="text-4xl font-bold">#MyBillboardMoment</h1>
+                <p className="text-xl opacity-90">Live Selfie Wall</p>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center space-x-2 text-2xl font-bold">
+                  <Users className="w-8 h-8" />
+                  <span>{totalCount}</span>
                 </div>
-                <h2 className="text-3xl font-bold mb-4">No selfies yet!</h2>
-                <p className="text-xl opacity-90">
-                  Be the first to share your selfie!
-                </p>
+                <p className="text-sm opacity-90">selfies today</p>
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Big Frame Container - Image with Bottom Info */}
+          <div className="w-full h-full border-8 border-white/20 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm bg-gradient-to-br from-white/5 to-white/10 relative mt-16">
+            {/* Frame Corner Decorations */}
+            <div className="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-white/40 rounded-tl-lg"></div>
+            <div className="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-white/40 rounded-tr-lg"></div>
+            <div className="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-white/40 rounded-bl-lg"></div>
+            <div className="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-white/40 rounded-br-lg"></div>
+            
+            {submissions.length > 0 ? (
+              <div className="relative w-full h-full">
+                <motion.div
+                  key={currentSubmission.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative w-full h-full"
+                >
+                  {/* Full Screen Image */}
+                  <img
+                    src={currentSubmission.framedImageUrl || currentSubmission.imageUrl}
+                    alt={`${currentSubmission.name}'s selfie`}
+                    className="w-full h-full object-contain"
+                  />
+                  
+                  {/* Bottom Info - Inside Frame */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
+                    <div className="flex justify-between items-end">
+                      {/* Name and Instagram */}
+                      <div className="text-white">
+                        <h3 className="text-2xl font-bold mb-1">{currentSubmission.name}</h3>
+                        {currentSubmission.instagramHandle && (
+                          <div className="flex items-center space-x-2">
+                            <Instagram className="w-5 h-5" />
+                            <span className="text-lg">@{currentSubmission.instagramHandle}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Image Counter */}
+                      <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
+                        {currentIndex + 1} / {submissions.length}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-center text-white">
+                <div>
+                  <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Instagram className="w-16 h-16" />
+                  </div>
+                  <h2 className="text-3xl font-bold mb-4">No selfies yet!</h2>
+                  <p className="text-xl opacity-90">
+                    Be the first to share your selfie!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Side - 1/3 width - QR Code Section */}

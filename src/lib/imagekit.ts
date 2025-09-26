@@ -35,12 +35,12 @@ export async function createFramedImage(imageUrl: string, name: string, instagra
 
     // Create transformation URL for framed image using correct ImageKit syntax
     const transformation = {
-      width: 600,
-      height: 600,
-      crop: 'maintain_ratio',
-      cropMode: 'center',
-      quality: 80,
-      format: 'auto',
+      // width: 600,
+      // height: 600,
+      // crop: 'maintain_ratio',
+      // cropMode: 'center',
+      // quality: 80,
+      // format: 'auto',
     };
 
     // Generate the transformed image URL
@@ -77,12 +77,13 @@ export async function getImageInfo(fileId: string) {
 }
 
 // Helper function to generate signed URLs for private images
-export function generateSignedUrl(imagePath: string, expiresIn: number = 3600) {
+export function generateSignedUrl(imagePath: string) {
   try {
     const signedUrl = imagekit.url({
       src: imagePath,
       signed: true,
-      expire: expiresIn,
+      expireSeconds: 3600,
+      // expire: expiresIn,
     });
     return signedUrl;
   } catch (error) {
