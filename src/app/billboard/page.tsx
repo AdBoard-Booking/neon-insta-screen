@@ -53,7 +53,7 @@ export default function BillboardPage() {
   }, [fomoBanner]);
 
   useEffect(() => {
-    // Generate QR code for upload page
+    // Generate QR code for upload page - only once
     const generateQRCode = async () => {
       try {
         const uploadUrl = `${window.location.origin}/upload`;
@@ -71,8 +71,11 @@ export default function BillboardPage() {
       }
     };
 
-    generateQRCode();
-  }, []);
+    // Only generate QR code if not already generated
+    if (!qrCodeUrl) {
+      generateQRCode();
+    }
+  }, [qrCodeUrl]);
 
   useEffect(() => {
     if (submissions.length > 0) {
@@ -198,29 +201,13 @@ export default function BillboardPage() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="absolute top-20 right-4 flex space-x-2">
-                  <button className="bg-white/20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white/30 transition-colors">
-                    <Heart className="w-6 h-6" />
-                  </button>
-                  <button className="bg-white/20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white/30 transition-colors">
-                    <Share2 className="w-6 h-6" />
-                  </button>
-                </div>
-
+                
                 {/* Image Counter */}
                 <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-full">
                   {currentIndex + 1} / {submissions.length}
                 </div>
 
-                {/* Footer Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-6 text-center text-white/80">
-                  <p className="text-lg">
-                    Upload your selfie at <span className="font-bold">billboard.example.com/upload</span>
-                  </p>
-                  <p className="text-sm mt-2">
-                    Or send via WhatsApp to +1 (555) 123-4567
-                  </p>
-                </div>
+               
               </motion.div>
             </div>
           ) : (

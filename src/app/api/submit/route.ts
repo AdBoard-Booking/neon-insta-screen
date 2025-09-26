@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const name = formData.get('name') as string;
     const instagramHandle = formData.get('instagramHandle') as string;
+    const whatsappContact = formData.get('whatsappContact') as string;
     const image = formData.get('image') as File;
     const source = formData.get('source') as 'whatsapp' | 'web';
     const phoneNumber = formData.get('phoneNumber') as string;
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
     const submission = await createSubmission({
       name,
       instagramHandle: instagramHandle || undefined,
+      whatsappContact: whatsappContact || undefined,
       imageUrl,
       status: 'pending',
       source,

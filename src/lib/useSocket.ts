@@ -7,10 +7,17 @@ export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    // Only create socket if not already exists
+    if (socket) return;
+
     const socketInstance = io(process.env.NODE_ENV === 'production' 
-      ? 'https://yourdomain.com' 
+      ? 'https://tulip.adboardtools.com' 
       : 'http://localhost:3000', {
       transports: ['websocket', 'polling'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     socketInstance.on('connect', () => {
@@ -30,7 +37,10 @@ export const useSocket = () => {
     setSocket(socketInstance);
 
     return () => {
-      socketInstance.close();
+      if (socketInstance) {
+        socketInstance.removeAllListeners();
+        socketInstance.close();
+      }
     };
   }, []);
 
@@ -76,29 +86,21 @@ export const useFOMOBanner = () => {
 export const useBillboardUpdates = () => {
   const { socket } = useSocket();
   const [shouldRefresh, setShouldRefresh] = useState(false);
-  
-  console.log('useBillboardUpdates hook called, socket:', socket ? 'connected' : 'null');
 
   useEffect(() => {
     if (!socket) return;
 
     const handleApprovedPost = async (data: any) => {
-      console.log('Received approved post event:', data);
       console.log('Setting shouldRefresh to true');
       setShouldRefresh(true);
     };
 
-    const handleRejectedPost = (data: any) => {
-      console.log('Post rejected:', data);
-      setShouldRefresh(true);
-    };
-
-    socket.on(SocketEvents.APPROVED_POST, handleApprovedPost);
-    socket.on(SocketEvents.REJECTED_POST, handleRejectedPost);
+    socket.on(SocketEvents.BILLBOARD_UPDATE, handleApprovedPost);
+    // socket.on(SocketEvents.REJECTED_POST, handleRejectedPost);
 
     return () => {
-      socket.off(SocketEvents.APPROVED_POST, handleApprovedPost);
-      socket.off(SocketEvents.REJECTED_POST, handleRejectedPost);
+      // socket.off(SocketEvents.APPROVED_POST, handleApprovedPost);
+      socket.off(SocketEvents.BILLBOARD_UPDATE, handleApprovedPost);
     };
   }, [socket]);
 

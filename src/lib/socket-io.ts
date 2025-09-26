@@ -43,14 +43,14 @@ export const emitNewUpload = (name: string) => {
 export const emitApprovedPost = (submission: Record<string, unknown>) => {
   console.log('Emitting approved post:', submission);
   console.log('Socket IO instance:', io ? 'exists' : 'null');
-  emitToBillboard(SocketEvents.APPROVED_POST, {
+  emitToBillboard(SocketEvents.BILLBOARD_UPDATE, {
     ...submission,
     timestamp: Date.now(),
   });
 };
 
 export const emitRejectedPost = (submissionId: string) => {
-  emitToBillboard(SocketEvents.REJECTED_POST, {
+  emitToBillboard(SocketEvents.BILLBOARD_UPDATE, {
     id: submissionId,
     timestamp: Date.now(),
   });

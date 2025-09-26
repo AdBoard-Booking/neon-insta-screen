@@ -109,35 +109,39 @@ export default function CelebrationOverlay({ isVisible, name, onComplete }: Cele
             </motion.div>
           </div>
 
-          {/* Floating particles */}
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ 
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * window.innerHeight,
-                scale: 0,
-                rotate: 0
-              }}
-              animate={{ 
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * window.innerHeight,
-                scale: [0, 1, 0],
-                rotate: 360
-              }}
-              transition={{
-                duration: 3,
-                delay: Math.random() * 0.5,
-                repeat: Infinity,
-                repeatDelay: Math.random() * 2
-              }}
-              className="absolute text-yellow-400"
-            >
-              {i % 3 === 0 ? <Sparkles className="w-6 h-6" /> : 
-               i % 3 === 1 ? <Heart className="w-6 h-6 text-pink-400" /> : 
-               <Star className="w-6 h-6 text-purple-400" />}
-            </motion.div>
-          ))}
+          {/* Floating particles - reduced count for memory efficiency */}
+          {[...Array(8)].map((_, i) => {
+            const initialX = Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200);
+            const initialY = Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800);
+            return (
+              <motion.div
+                key={i}
+                initial={{ 
+                  x: initialX,
+                  y: initialY,
+                  scale: 0,
+                  rotate: 0
+                }}
+                animate={{ 
+                  x: initialX + (Math.random() - 0.5) * 200,
+                  y: initialY + (Math.random() - 0.5) * 200,
+                  scale: [0, 1, 0],
+                  rotate: 360
+                }}
+                transition={{
+                  duration: 3,
+                  delay: Math.random() * 0.5,
+                  repeat: Infinity,
+                  repeatDelay: Math.random() * 2
+                }}
+                className="absolute text-yellow-400"
+              >
+                {i % 3 === 0 ? <Sparkles className="w-6 h-6" /> : 
+                 i % 3 === 1 ? <Heart className="w-6 h-6 text-pink-400" /> : 
+                 <Star className="w-6 h-6 text-purple-400" />}
+              </motion.div>
+            );
+          })}
 
           {/* Pulsing rings */}
           {[...Array(3)].map((_, i) => (

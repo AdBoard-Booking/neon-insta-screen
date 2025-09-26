@@ -8,6 +8,7 @@ export interface Submission {
   id: string;
   name: string;
   instagramHandle?: string;
+  whatsappContact?: string; // For web form WhatsApp contact
   imageUrl: string;
   status: 'pending' | 'approved' | 'rejected';
   source: 'whatsapp' | 'web';
@@ -36,10 +37,11 @@ export async function createSubmission(data: Omit<Submission, 'id' | 'createdAt'
   const fields: FieldSet = {
     Name: data.name,
     'Instagram Handle': data.instagramHandle || '',
+    'WhatsApp Contact': data.whatsappContact || '',
     'Image URL': data.imageUrl,
     Status: data.status,
     Source: data.source,
-    'Phone Number': data.phoneNumber || '',
+    // 'Phone Number': data.phoneNumber || '',
     'Framed Image URL': data.framedImageUrl || '',
   };
 
@@ -87,15 +89,17 @@ export async function updateSubmissionStatus(id: string, status: 'approved' | 'r
   return record[0];
 }
 
-export async function getAllSubmissions() {
+export async function getAllSubmissions(limit: number = 100) {
   const records = await submissionsTable.select({
     sort: [{ field: 'Created At', direction: 'desc' }],
+    maxRecords: limit,
   }).all();
 
   return records.map(record => ({
     id: record.id,
     name: record.get('Name') as string,
     instagramHandle: record.get('Instagram Handle') as string,
+    whatsappContact: record.get('WhatsApp Contact') as string,
     imageUrl: record.get('Image URL') as string,
     status: record.get('Status') as 'pending' | 'approved' | 'rejected',
     source: record.get('Source') as 'whatsapp' | 'web',
@@ -106,16 +110,18 @@ export async function getAllSubmissions() {
   }));
 }
 
-export async function getApprovedSubmissions() {
+export async function getApprovedSubmissions(limit: number = 50) {
   const records = await submissionsTable.select({
     filterByFormula: "{Status} = 'approved'",
     sort: [{ field: 'Approved At', direction: 'desc' }],
+    maxRecords: limit,
   }).all();
 
   return records.map(record => ({
     id: record.id,
     name: record.get('Name') as string,
     instagramHandle: record.get('Instagram Handle') as string,
+    whatsappContact: record.get('WhatsApp Contact') as string,
     imageUrl: record.get('Image URL') as string,
     status: record.get('Status') as 'approved',
     source: record.get('Source') as 'whatsapp' | 'web',
