@@ -16,6 +16,8 @@ export interface Submission {
   approvedAt?: string;
   framedImageUrl?: string;
   phoneNumber?: string; // For WhatsApp submissions
+  hasAuthenticated?: boolean; // Whether user completed authentication flow
+  email?: string; // Email of authenticated user
 }
 
 export const submissionsTable = base(process.env.AIRTABLE_TABLE_NAME!);
@@ -107,6 +109,8 @@ export async function getAllSubmissions(limit: number = 100) {
     approvedAt: record.get('Approved At') as string,
     framedImageUrl: record.get('Framed Image URL') as string,
     phoneNumber: record.get('Phone Number') as string,
+    hasAuthenticated: record.get('Has Authenticated') as boolean || false,
+    email: record.get('Email') as string || undefined,
   }));
 }
 
@@ -129,6 +133,8 @@ export async function getApprovedSubmissions(limit: number = 50) {
     approvedAt: record.get('Approved At') as string,
     framedImageUrl: record.get('Framed Image URL') as string,
     phoneNumber: record.get('Phone Number') as string,
+    hasAuthenticated: record.get('Has Authenticated') as boolean || false,
+    email: record.get('Email') as string || undefined,
   }));
 }
 
@@ -263,5 +269,49 @@ export async function getAuthorizedUser(email: string): Promise<AuthorizedUser |
   } catch (error) {
     console.error('Failed to get authorized user from Airtable', error);
     return null;
+  }
+}
+
+export async function getSubmissionById(id: string): Promise<Submission | null> {
+  try {
+    const record = await submissionsTable.find(id);
+    
+    return {
+      id: record.id,
+      name: record.get('Name') as string,
+      instagramHandle: record.get('Instagram Handle') as string || undefined,
+      whatsappContact: record.get('WhatsApp Contact') as string || undefined,
+      imageUrl: record.get('Image URL') as string,
+      status: record.get('Status') as 'pending' | 'approved' | 'rejected',
+      source: record.get('Source') as 'whatsapp' | 'web',
+      createdAt: record.get('Created') as string || new Date().toISOString(),
+      approvedAt: record.get('Approved At') as string || undefined,
+      framedImageUrl: record.get('Framed Image URL') as string || undefined,
+      phoneNumber: record.get('Phone Number') as string || undefined,
+      hasAuthenticated: record.get('Has Authenticated') as boolean || false,
+      email: record.get('Email') as string || undefined,
+    };
+  } catch (error) {
+    console.error('Failed to get submission by ID:', error);
+    return null;
+  }
+}
+
+export async function updateSubmissionAuth(id: string, email: string) {
+  try {
+    const record = await submissionsTable.update([
+      {
+        id,
+        fields: {
+          'Has Authenticated': true,
+          'Email': email,
+        },
+      },
+    ]);
+    
+    return record[0];
+  } catch (error) {
+    console.error('Failed to update submission authentication:', error);
+    throw error;
   }
 }

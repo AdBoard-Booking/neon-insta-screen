@@ -3,10 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Camera, Instagram, User, CheckCircle, RotateCcw, MessageCircle, Upload, X } from 'lucide-react';
 import Image from 'next/image';
-import LoginDialog from '@/components/LoginDialog';
-import { stackClientApp } from '@/stack/client';
 import Link from 'next/link';
-import { SignIn } from '@stackframe/stack';
 
 export default function UploadPage() {
   const [formData, setFormData] = useState({
@@ -24,9 +21,6 @@ export default function UploadPage() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [uploadMode, setUploadMode] = useState<'camera' | 'file'>('camera');
   const [isDragOver, setIsDragOver] = useState(false);
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showReuploadMessage, setShowReuploadMessage] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -209,19 +203,7 @@ export default function UploadPage() {
       return;
     }
 
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      // Store form data in localStorage for after login
-      const formDataToStore = {
-        ...formData,
-        image: null, // Can't store File object in localStorage, will need to re-upload
-      };
-      localStorage.setItem('pendingSubmission', JSON.stringify(formDataToStore));
-      setShowLoginDialog(true);
-      return;
-    }
-
-    // Proceed with submission if authenticated
+    // Proceed with submission - authentication will happen on confirm page
     await submitForm();
   };
 
@@ -248,20 +230,8 @@ export default function UploadPage() {
       const result = await response.json();
 
       if (result.success) {
-        setSubmitStatus('success');
-        setFormData({
-          name: '',
-          instagramHandle: '',
-          whatsappContact: '',
-          image: null,
-          consent: false,
-        });
-        setIsCaptured(false);
-        setIsCameraActive(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        // Don't automatically start camera, let user click button
+        // Redirect to confirm page with submission ID
+        window.location.href = `/confirm/${result.submission.id}`;
       } else {
         setSubmitStatus('error');
       }
@@ -314,25 +284,6 @@ export default function UploadPage() {
           </div>
         )}
 
-        {showReuploadMessage && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center">
-              <CheckCircle className="w-5 h-5 text-blue-500 mr-2" />
-              <div>
-                <p className="text-blue-700 font-medium">Welcome back!</p>
-                <p className="text-blue-600 text-sm">
-                  Your form data has been restored. Please upload your photo again to submit.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowReuploadMessage(false)}
-                className="ml-auto text-blue-500 hover:text-blue-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
 
        
 
@@ -617,11 +568,6 @@ export default function UploadPage() {
         </div> */}
       </div>
 
-      {/* Login Dialog */}
-      <LoginDialog
-        open={showLoginDialog}
-        onOpenChange={setShowLoginDialog}
-      />
     </div>
   );
 }
