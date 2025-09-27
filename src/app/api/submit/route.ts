@@ -38,6 +38,30 @@ export async function POST(request: NextRequest) {
     // Emit real-time event for FOMO banner
     emitNewUpload(name);
 
+    // Call n8n webhook
+    try {
+      await fetch('https://n8n.adboardbooking.com/webhook/47d14463-9196-464d-adcc-935d413e4382', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submissionId: submission.id,
+          name,
+          instagramHandle: instagramHandle || undefined,
+          whatsappContact: whatsappContact || undefined,
+          imageUrl,
+          source,
+          phoneNumber: phoneNumber || undefined,
+          status: 'pending',
+          createdAt: submission.createdAt,
+        }),
+      });
+    } catch (webhookError) {
+      console.error('Webhook error:', webhookError);
+      // Don't fail the submission if webhook fails
+    }
+
     return NextResponse.json({
       success: true,
       submission,

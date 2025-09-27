@@ -117,6 +117,35 @@ export async function PATCH(request: NextRequest) {
         framedImageUrl,
         // approvedAt: approvalTimestamp,
       });
+
+      // Call n8n webhook for approval
+      try {
+        await fetch('https://n8n.adboardbooking.com/webhook/47d14463-9196-464d-adcc-935d413e4382', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'approval',
+            submissionId: id,
+            name: submission.name,
+            instagramHandle: submission.instagramHandle || undefined,
+            whatsappContact: submission.whatsappContact || undefined,
+            imageUrl: submission.imageUrl,
+            framedImageUrl: framedImageUrl || undefined,
+            source: submission.source,
+            phoneNumber: submission.phoneNumber || undefined,
+            status: 'approved',
+            approvedAt: new Date().toISOString(),
+            createdAt: submission.createdAt,
+            adminEmail: user.primaryEmail || undefined,
+            adminName: user.displayName || undefined,
+          }),
+        });
+      } catch (webhookError) {
+        console.error('Approval webhook error:', webhookError);
+        // Don't fail the approval if webhook fails
+      }
     } else if (status === 'rejected') {
       emitRejectedPost(id);
     }
