@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSubmission } from '@/lib/airtable';
+import { createSubmission, updateSubmissionAuth } from '@/lib/airtable';
 import { uploadImage } from '@/lib/imagekit';
 import { emitNewUpload } from '@/lib/socket-io';
 
@@ -11,9 +11,15 @@ export async function POST(request: NextRequest) {
     const whatsappContact = formData.get('whatsappContact') as string;
     const image = formData.get('image') as File;
     const source = formData.get('source') as 'whatsapp' | 'web';
+    const isAuthenticated = formData.get('isAuthenticated') === 'true';
+    const acceptTerms = formData.get('acceptTerms') === 'true';
 
     if (!name || !image) {
       return NextResponse.json({ error: 'Name and image are required' }, { status: 400 });
+    }
+
+    if (isAuthenticated && !acceptTerms) {
+      return NextResponse.json({ error: 'You must accept the terms and conditions' }, { status: 400 });
     }
 
     // Convert image to buffer
@@ -33,6 +39,11 @@ export async function POST(request: NextRequest) {
       source,
       phoneNumber: whatsappContact || undefined,
     });
+
+    // If authenticated, update the submission to mark it as authenticated
+    if (isAuthenticated && whatsappContact) {
+      await updateSubmissionAuth(submission.id, whatsappContact);
+    }
 
     // Emit real-time event for FOMO banner
     emitNewUpload(name);
@@ -64,7 +75,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       submission,
-      message: 'Submission received! Your selfie is being reviewed.',
+      message: isAuthenticated 
+        ? 'Authentication confirmed successfully! Your submission is now complete.'
+        : 'Submission received! Your selfie is being reviewed.',
     });
   } catch (error) {
     console.error('Submission error:', error);

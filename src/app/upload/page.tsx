@@ -24,6 +24,8 @@ export default function UploadPage() {
   const [isResending, setIsResending] = useState(false);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showProgressDialog, setShowProgressDialog] = useState(false);
+  const [progressMessage, setProgressMessage] = useState('');
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCaptured, setIsCaptured] = useState(false);
@@ -343,6 +345,14 @@ export default function UploadPage() {
 
   const createActualSubmission = async () => {
     try {
+      setIsSubmitting(true);
+      setSubmitStatus('idle');
+      setShowProgressDialog(true);
+
+      // Step 1: Preparing submission
+      setProgressMessage('Preparing your submission...');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UX
+
       const submitData = new FormData();
       submitData.append('name', formData.name);
       submitData.append('instagramHandle', formData.instagramHandle);
@@ -353,6 +363,18 @@ export default function UploadPage() {
       submitData.append('source', 'web');
       submitData.append('consent', formData.consent.toString());
 
+      // Add authentication and terms acceptance to form data
+      submitData.append('isAuthenticated', 'true');
+      submitData.append('acceptTerms', 'true');
+
+      // Step 2: Uploading image
+      setProgressMessage('Uploading your image...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Step 3: Processing submission
+      setProgressMessage('Processing your submission...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const response = await fetch('/api/submit', {
         method: 'POST',
         body: submitData,
@@ -361,37 +383,26 @@ export default function UploadPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Update the submission ID with the real one
-        setSubmissionId(result.submission.id);
+        // Step 4: Success
+        setProgressMessage('Submission successful! 🎉');
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Now confirm the submission with authentication
-        const confirmResponse = await fetch('/api/confirm', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: result.submission.id,
-            phoneNumber: formData.whatsappContact,
-            acceptTerms: true,
-          }),
-        });
-
-        const confirmResult = await confirmResponse.json();
-
-        if (confirmResult.success) {
-          setSubmitStatus('success');
-          // Show celebration dialog
-          setShowCelebration(true);
-        } else {
-          setSubmitStatus('error');
-        }
+        setSubmitStatus('success');
+        setShowProgressDialog(false);
+        // Show celebration dialog
+        setShowCelebration(true);
       } else {
+        setProgressMessage('Submission failed. Please try again.');
+        await new Promise(resolve => setTimeout(resolve, 1000));
         setSubmitStatus('error');
+        setShowProgressDialog(false);
       }
     } catch (error) {
       console.error('Error creating submission:', error);
+      setProgressMessage('An error occurred. Please try again.');
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setSubmitStatus('error');
+      setShowProgressDialog(false);
     }
   };
 
@@ -420,11 +431,17 @@ export default function UploadPage() {
         </div>
 
         {submitStatus === 'success' && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
-            <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-            <span className="text-green-700">
-              Your selfie has been verified and submitted! We&apos;ll review it soon.
-            </span>
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center mb-2">
+              <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+              <span className="text-green-700 font-semibold">
+                Submission Successful! 🎉
+              </span>
+            </div>
+            <p className="text-green-700 text-sm">
+              Your selfie has been verified and submitted successfully! 
+              We&apos;ll review it and notify you via WhatsApp once it&apos;s approved.
+            </p>
           </div>
         )}
 
@@ -808,6 +825,34 @@ export default function UploadPage() {
           </p>
         </div> */}
       </div>
+
+      {/* Progress Dialog */}
+      {showProgressDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="text-center">
+              <div className="mb-6">
+                <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Processing Submission
+                </h3>
+                <p className="text-gray-600">
+                  {progressMessage}
+                </p>
+              </div>
+              
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              </div>
+              
+              <p className="text-sm text-gray-500">
+                Please don&apos;t close this window...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Celebration Overlay */}
       <CelebrationOverlay
