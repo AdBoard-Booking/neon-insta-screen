@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
     const whatsappContact = formData.get('whatsappContact') as string;
     const image = formData.get('image') as File;
     const source = formData.get('source') as 'whatsapp' | 'web';
-    const phoneNumber = formData.get('phoneNumber') as string;
 
     if (!name || !image) {
       return NextResponse.json({ error: 'Name and image are required' }, { status: 400 });
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
       imageUrl,
       status: 'pending',
       source,
-      phoneNumber: phoneNumber || undefined,
+      phoneNumber: whatsappContact || undefined,
     });
 
     // Emit real-time event for FOMO banner
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
           whatsappContact: whatsappContact || undefined,
           imageUrl,
           source,
-          phoneNumber: phoneNumber || undefined,
+          phoneNumber: whatsappContact || undefined,
           status: 'pending',
           createdAt: submission.createdAt,
         }),

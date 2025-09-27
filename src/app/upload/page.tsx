@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Instagram, User, CheckCircle, RotateCcw, MessageCircle, Upload, X } from 'lucide-react';
+import { Camera, Instagram, User, CheckCircle, RotateCcw, MessageCircle, Upload, X, Loader2, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import CelebrationOverlay from '@/components/CelebrationOverlay';
 
 export default function UploadPage() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,14 @@ export default function UploadPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCaptured, setIsCaptured] = useState(false);
@@ -33,43 +42,141 @@ export default function UploadPage() {
     }));
   };
 
-  // Check authentication status on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const user = await stackClientApp.getUser();
-        const isAuth = !!user;
-        setIsAuthenticated(isAuth);
-        
-        // If user is authenticated and there's pending form data, show reupload message
-        if (isAuth) {
-          const pendingSubmission = localStorage.getItem('pendingSubmission');
-          if (pendingSubmission) {
-            try {
-              const storedData = JSON.parse(pendingSubmission);
-              // Restore form data (except image)
-              setFormData(prev => ({
-                ...prev,
-                name: storedData.name || '',
-                instagramHandle: storedData.instagramHandle || '',
-                whatsappContact: storedData.whatsappContact || '',
-                consent: storedData.consent || false,
-              }));
-              localStorage.removeItem('pendingSubmission');
-              setShowReuploadMessage(true);
-            } catch (error) {
-              console.error('Error processing pending submission:', error);
-              localStorage.removeItem('pendingSubmission');
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setIsAuthenticated(false);
+  // Phone verification functions
+  const handleSendCode = async () => {
+    if (!formData.whatsappContact) {
+      alert('Please enter your WhatsApp contact');
+      return;
+    }
+
+    setIsVerifying(true);
+    
+    try {
+      const response = await fetch('/api/auth/phone/send-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phoneNumber: formData.whatsappContact,
+          submissionId: submissionId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsCodeSent(true);
+        // Start cooldown timer (60 seconds)
+        setResendCooldown(60);
+        startCooldownTimer();
+      } else {
+        alert(result.error || 'Failed to send verification code');
       }
-    };
-    checkAuth();
-  }, []);
+    } catch (error) {
+      console.error('Error sending verification code:', error);
+      alert('Failed to send verification code');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (!formData.whatsappContact) {
+      alert('Please enter your WhatsApp contact');
+      return;
+    }
+
+    if (resendCooldown > 0) {
+      alert(`Please wait ${resendCooldown} seconds before requesting a new code`);
+      return;
+    }
+
+    setIsResending(true);
+    
+    try {
+      const response = await fetch('/api/auth/phone/send-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phoneNumber: formData.whatsappContact,
+          submissionId: submissionId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('New verification code sent successfully!');
+        // Start cooldown timer (60 seconds)
+        setResendCooldown(60);
+        startCooldownTimer();
+      } else {
+        alert(result.error || 'Failed to resend verification code');
+      }
+    } catch (error) {
+      console.error('Error resending verification code:', error);
+      alert('Failed to resend verification code');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const startCooldownTimer = () => {
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleCelebrationComplete = () => {
+    setShowCelebration(false);
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      alert('Please enter the verification code');
+      return;
+    }
+
+    setIsVerifying(true);
+    
+    try {
+      const response = await fetch('/api/auth/phone/verify-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phoneNumber: formData.whatsappContact,
+          code: verificationCode,
+          submissionId: submissionId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsAuthenticated(true);
+        // Now create the actual submission after verification
+        await createActualSubmission();
+      } else {
+        alert(result.error || 'Invalid verification code');
+      }
+    } catch (error) {
+      console.error('Error verifying code:', error);
+      alert('Failed to verify code');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   // Cleanup camera stream on component unmount
   useEffect(() => {
@@ -79,6 +186,14 @@ export default function UploadPage() {
       }
     };
   }, [cameraStream]);
+
+  // Cleanup timer on component unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup any running timers when component unmounts
+      setResendCooldown(0);
+    };
+  }, []);
 
   const startCamera = async () => {
     try {
@@ -198,12 +313,12 @@ export default function UploadPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.image || !formData.consent) {
+    if (!formData.name || !formData.image || !formData.whatsappContact || !formData.consent) {
       alert('Please fill in all required fields and accept the terms.');
       return;
     }
 
-    // Proceed with submission - authentication will happen on confirm page
+    // First submit the form to get submission ID
     await submitForm();
   };
 
@@ -211,6 +326,22 @@ export default function UploadPage() {
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
+    try {
+      // Generate a temporary submission ID for verification process
+      const tempSubmissionId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setSubmissionId(tempSubmissionId);
+      
+      // Now send verification code
+      await handleSendCode();
+    } catch (error) {
+      console.error('Submission error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const createActualSubmission = async () => {
     try {
       const submitData = new FormData();
       submitData.append('name', formData.name);
@@ -230,16 +361,37 @@ export default function UploadPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Redirect to confirm page with submission ID
-        window.location.href = `/confirm/${result.submission.id}`;
+        // Update the submission ID with the real one
+        setSubmissionId(result.submission.id);
+        
+        // Now confirm the submission with authentication
+        const confirmResponse = await fetch('/api/confirm', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: result.submission.id,
+            phoneNumber: formData.whatsappContact,
+            acceptTerms: true,
+          }),
+        });
+
+        const confirmResult = await confirmResponse.json();
+
+        if (confirmResult.success) {
+          setSubmitStatus('success');
+          // Show celebration dialog
+          setShowCelebration(true);
+        } else {
+          setSubmitStatus('error');
+        }
       } else {
         setSubmitStatus('error');
       }
     } catch (error) {
-      console.error('Submission error:', error);
+      console.error('Error creating submission:', error);
       setSubmitStatus('error');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -271,7 +423,7 @@ export default function UploadPage() {
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
             <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
             <span className="text-green-700">
-              Your selfie has been submitted! We&apos;ll review it soon.
+              Your selfie has been verified and submitted! We&apos;ll review it soon.
             </span>
           </div>
         )}
@@ -330,7 +482,7 @@ export default function UploadPage() {
 
           <div>
             <label htmlFor="whatsappContact" className="block text-sm font-medium text-gray-700 mb-2">
-              WhatsApp Contact (Optional)
+              WhatsApp Contact *
             </label>
             <div className="relative">
               <MessageCircle className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -341,7 +493,8 @@ export default function UploadPage() {
                 value={formData.whatsappContact}
                 onChange={handleInputChange}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="8558888888"
+                placeholder="+1234567890"
+                required
               />
             </div>
           </div>
@@ -522,6 +675,80 @@ export default function UploadPage() {
             </div>
           </div>
 
+          {/* Phone Verification Section */}
+          {isCodeSent && !isAuthenticated && (
+            <div className="bg-blue-50 rounded-lg p-4 space-y-4">
+              <h3 className="font-semibold text-gray-900 mb-2">Verify Your WhatsApp Contact</h3>
+              <p className="text-sm text-gray-600">
+                We sent a verification code to {formData.whatsappContact}. Please enter the code below to complete your submission.
+              </p>
+              <div>
+                <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  Verification Code
+                </label>
+                <input
+                  id="verificationCode"
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="Enter 6-digit code"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="space-y-3">
+                <button
+                  onClick={handleVerifyCode}
+                  disabled={!verificationCode || isVerifying}
+                  className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isVerifying ? (
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Verifying...
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      <Check className="w-4 h-4 mr-2" />
+                      Verify Code
+                    </div>
+                  )}
+                </button>
+                
+                <button
+                  onClick={handleResendCode}
+                  disabled={resendCooldown > 0 || isResending}
+                  className="w-full bg-gray-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isResending ? (
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Sending...
+                    </div>
+                  ) : resendCooldown > 0 ? (
+                    `Resend Code (${resendCooldown}s)`
+                  ) : (
+                    'Resend Code'
+                  )}
+                </button>
+                
+                {resendCooldown > 0 && (
+                  <p className="text-xs text-gray-500 text-center">
+                    You can request a new code in {resendCooldown} seconds
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {isAuthenticated && (
+            <div className="bg-green-50 rounded-lg p-4">
+              <div className="flex items-center">
+                <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                <span className="text-green-700 font-medium">WhatsApp contact verified successfully!</span>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-start">
             <input
               type="checkbox"
@@ -539,10 +766,24 @@ export default function UploadPage() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isCodeSent || isAuthenticated}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {isSubmitting ? 'Submitting...' : uploadMode === 'camera' ? 'Submit Selfie' : 'Submit Photo'}
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Sending verification code...
+              </div>
+            ) : isCodeSent && !isAuthenticated ? (
+              'Check your phone for verification code'
+            ) : isAuthenticated ? (
+              <div className="flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Verification Complete
+              </div>
+            ) : (
+              uploadMode === 'camera' ? 'Verify & Submit Selfie' : 'Verify & Submit Photo'
+            )}
           </button>
         </form>
 
@@ -567,6 +808,13 @@ export default function UploadPage() {
           </p>
         </div> */}
       </div>
+
+      {/* Celebration Overlay */}
+      <CelebrationOverlay
+        isVisible={showCelebration}
+        name={formData.name || 'You'}
+        onComplete={handleCelebrationComplete}
+      />
 
     </div>
   );

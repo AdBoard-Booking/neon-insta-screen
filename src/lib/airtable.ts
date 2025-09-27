@@ -43,7 +43,6 @@ export async function createSubmission(data: Omit<Submission, 'id' | 'createdAt'
     'Image URL': data.imageUrl,
     Status: data.status,
     Source: data.source,
-    // 'Phone Number': data.phoneNumber || '',
     'Framed Image URL': data.framedImageUrl || '',
   };
 
@@ -108,7 +107,6 @@ export async function getAllSubmissions(limit: number = 100) {
     createdAt: record.get('Created At') as string,
     approvedAt: record.get('Approved At') as string,
     framedImageUrl: record.get('Framed Image URL') as string,
-    phoneNumber: record.get('Phone Number') as string,
     hasAuthenticated: record.get('Has Authenticated') as boolean || false,
     email: record.get('Email') as string || undefined,
   }));
@@ -132,7 +130,6 @@ export async function getApprovedSubmissions(limit: number = 50) {
     createdAt: record.get('Created At') as string,
     approvedAt: record.get('Approved At') as string,
     framedImageUrl: record.get('Framed Image URL') as string,
-    phoneNumber: record.get('Phone Number') as string,
     hasAuthenticated: record.get('Has Authenticated') as boolean || false,
     email: record.get('Email') as string || undefined,
   }));
@@ -294,7 +291,6 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
       createdAt: record.get('Created') as string || new Date().toISOString(),
       approvedAt: record.get('Approved At') as string || undefined,
       framedImageUrl: record.get('Framed Image URL') as string || undefined,
-      phoneNumber: record.get('Phone Number') as string || undefined,
       hasAuthenticated: record.get('Has Authenticated') as boolean || false,
       email: record.get('Email') as string || undefined,
     };
@@ -304,14 +300,13 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
   }
 }
 
-export async function updateSubmissionAuth(id: string, email: string) {
+export async function updateSubmissionAuth(id: string, phoneNumber: string) {
   try {
     const record = await submissionsTable.update([
       {
         id,
         fields: {
-          'Has Authenticated': true,
-          'Email': email,
+          'Has Authenticated': true
         },
       },
     ]);

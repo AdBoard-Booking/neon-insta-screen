@@ -3,11 +3,11 @@ import { getSubmissionById, updateSubmissionAuth } from '@/lib/airtable';
 
 export async function POST(request: NextRequest) {
   try {
-    const { id, email, acceptTerms } = await request.json();
+    const { id, phoneNumber, acceptTerms } = await request.json();
 
-    if (!id || !email) {
+    if (!id || !phoneNumber) {
       return NextResponse.json(
-        { error: 'Submission ID and email are required' },
+        { error: 'Submission ID and phone number are required' },
         { status: 400 }
       );
     }
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update submission with authentication data
-    await updateSubmissionAuth(id, email);
+    await updateSubmissionAuth(id, phoneNumber);
 
     return NextResponse.json({
       success: true,
