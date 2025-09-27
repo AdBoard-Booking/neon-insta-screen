@@ -334,7 +334,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Verifying access...</p>
         </div>
       </div>
@@ -349,7 +349,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Redirecting...</p>
         </div>
       </div>
@@ -360,7 +360,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading submissions...</p>
         </div>
       </div>
@@ -390,8 +390,8 @@ export default function AdminPage() {
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-purple-600" />
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-blue-600" />
                     </div>
                   )}
                   <div className="text-sm min-w-0">
@@ -405,7 +405,7 @@ export default function AdminPage() {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleManualRefresh}
-                  className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex-1 sm:flex-none"
+                  className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex-1 sm:flex-none"
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span className="hidden sm:inline">Refresh</span>
@@ -443,7 +443,7 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex items-center">
-              <Users className="w-8 h-8 text-purple-600" />
+              <Users className="w-8 h-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm text-gray-500">Total Submissions</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
@@ -497,7 +497,7 @@ export default function AdminPage() {
               }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === tab.id
-                  ? 'bg-purple-600 text-white shadow'
+                  ? 'bg-blue-600 text-white shadow'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >

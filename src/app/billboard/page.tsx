@@ -113,7 +113,7 @@ export default function BillboardPage() {
 
   if (isLoading) {
     return (
-      <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-xl">Loading billboard...</p>
@@ -125,7 +125,7 @@ export default function BillboardPage() {
   const currentSubmission = submissions[currentIndex];
 
   return (
-    <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 overflow-hidden relative">
+    <div className="h-screen bg-black overflow-hidden relative">
       {/* Celebration Overlay */}
       <CelebrationOverlay
         isVisible={showCelebration}
@@ -140,7 +140,7 @@ export default function BillboardPage() {
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}
-            className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 text-center"
+            className="absolute top-0 left-0 right-0 z-50 bg-blue-600 text-white p-4 text-center"
           >
             <motion.div
               initial={{ scale: 0.8 }}
@@ -161,7 +161,7 @@ export default function BillboardPage() {
           <div className="absolute top-8 left-8 right-8 z-20">
             <div className="flex justify-between items-center text-white">
               <div>
-                <h1 className="text-4xl font-bold">#MyBillboardMoment</h1>
+                <h1 className="text-2xl font-bold">#MyBillboardMoment</h1>
                 <p className="text-xl opacity-90">Live Selfie Wall</p>
               </div>
               <div className="text-right">
@@ -195,7 +195,7 @@ export default function BillboardPage() {
                     <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                       <h3 className="text-xl font-bold mb-4">Now Showing</h3>
                       <div className="space-y-2">
-                        <h4 className="text-2xl font-bold text-pink-300">{currentSubmission.name}</h4>
+                        <h4 className="text-2xl font-bold text-blue-300">{currentSubmission.name}</h4>
                         {currentSubmission.instagramHandle && (
                           <div className="flex items-center space-x-2">
                             <Instagram className="w-5 h-5" />
@@ -220,7 +220,7 @@ export default function BillboardPage() {
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
         exit={{ opacity: 0, scale: 0.8, rotate: 5 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative h-full inline-block"
+        className="relative h-full flex items-center"
       >
         {/* Instagram Style Frame - shrink to image width */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col w-fit">
@@ -325,7 +325,7 @@ export default function BillboardPage() {
         </div>
 
         {/* Right Side - 1/3 width - QR Code Section */}
-        <div className="w-1/3 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-purple-800/30 to-indigo-800/30 border-l border-white/10 relative">
+        <div className="w-1/3 flex flex-col items-center justify-center p-8 bg-gray-900 border-l border-gray-700 relative">
           <div className="text-center text-white flex flex-col items-center justify-center h-full">
             <QrCode className="w-16 h-16 mx-auto mb-6 text-white/80" />
             <h2 className="text-3xl font-bold mb-4">Scan to Upload</h2>
@@ -369,9 +369,9 @@ export default function BillboardPage() {
 
       {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
     </div>
   );

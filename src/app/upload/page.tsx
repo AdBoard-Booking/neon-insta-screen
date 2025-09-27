@@ -245,11 +245,11 @@ export default function UploadPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
          
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
             {uploadMode === 'camera' ? (
               <Camera className="w-8 h-8 text-white" />
             ) : (
@@ -303,7 +303,7 @@ export default function UploadPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter your name"
                 required
               />
@@ -322,7 +322,7 @@ export default function UploadPage() {
                 name="instagramHandle"
                 value={formData.instagramHandle}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="yourusername"
               />
             </div>
@@ -340,7 +340,7 @@ export default function UploadPage() {
                 name="whatsappContact"
                 value={formData.whatsappContact}
                 onChange={handleInputChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="8558888888"
               />
             </div>
@@ -354,7 +354,7 @@ export default function UploadPage() {
               onClick={() => switchUploadMode('camera')}
               className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md transition-all ${
                 uploadMode === 'camera'
-                  ? 'bg-white text-purple-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
@@ -366,7 +366,7 @@ export default function UploadPage() {
               onClick={() => switchUploadMode('file')}
               className={`flex-1 flex items-center justify-center py-2 px-4 rounded-md transition-all ${
                 uploadMode === 'file'
-                  ? 'bg-white text-purple-600 shadow-sm'
+                  ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-gray-600 hover:text-gray-800'
               }`}
             >
@@ -391,7 +391,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={startCamera}
-                        className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         Try Again
                       </button>
@@ -430,7 +430,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={capturePhoto}
-                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg"
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-lg"
                       >
                         <Camera className="w-5 h-5 mr-2" />
                         Capture Selfie
@@ -445,7 +445,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={startCamera}
-                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg"
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-lg"
                       >
                         <Camera className="w-5 h-5 mr-2" />
                         Start Camera
@@ -478,7 +478,7 @@ export default function UploadPage() {
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="inline-flex items-center px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                           <Upload className="w-4 h-4 mr-2" />
                           Change Photo
@@ -489,7 +489,7 @@ export default function UploadPage() {
                     <div
                       className={`border-2 border-dashed rounded-lg p-8 transition-colors ${
                         isDragOver
-                          ? 'border-purple-400 bg-purple-50'
+                          ? 'border-blue-400 bg-blue-50'
                           : 'border-gray-300 hover:border-gray-400'
                       }`}
                       onDrop={handleDrop}
@@ -503,7 +503,7 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg"
+                        className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-lg"
                       >
                         <Upload className="w-5 h-5 mr-2" />
                         Choose File
@@ -529,7 +529,7 @@ export default function UploadPage() {
               name="consent"
               checked={formData.consent}
               onChange={handleInputChange}
-              className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               required
             />
             <label htmlFor="consent" className="ml-2 text-sm text-gray-700">
@@ -540,7 +540,7 @@ export default function UploadPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-4 rounded-lg font-medium hover:from-purple-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isSubmitting ? 'Submitting...' : uploadMode === 'camera' ? 'Submit Selfie' : 'Submit Photo'}
           </button>
@@ -563,7 +563,7 @@ export default function UploadPage() {
         {/* <div className="mt-6 text-center">
           <p className="text-sm text-gray-500">
             Or send your selfie via WhatsApp to{' '}
-            <span className="font-medium text-purple-600">+1 (555) 123-4567</span>
+            <span className="font-medium text-blue-600">+1 (555) 123-4567</span>
           </p>
         </div> */}
       </div>

@@ -139,7 +139,14 @@ export async function getApprovedSubmissions(limit: number = 50) {
 }
 
 export async function deleteSubmission(id: string) {
-  const record = await submissionsTable.destroy(id);
+  const record = await submissionsTable.update([
+    {
+      id,
+      fields: {
+        Status: 'deleted',
+      },
+    },
+  ]);
   return record;
 }
 
