@@ -300,7 +300,7 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
   }
 }
 
-export async function updateSubmissionAuth(id: string, phoneNumber: string) {
+export async function updateSubmissionAuth(id: string) {
   try {
     const record = await submissionsTable.update([
       {
