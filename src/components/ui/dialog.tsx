@@ -36,6 +36,8 @@ interface DialogDescriptionProps {
 }
 
 const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
+  void onOpenChange
+
   React.useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden'

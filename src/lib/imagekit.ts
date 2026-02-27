@@ -29,10 +29,8 @@ export async function uploadImage(imageBuffer: Buffer, fileName: string, folder:
 
 export async function createFramedImage(imageUrl: string, name: string, instagramHandle?: string) {
   try {
-    const textOverlay = instagramHandle 
-      ? `${name} @${instagramHandle}` 
-      : name;
-
+    const displayName = instagramHandle ? `${name} @${instagramHandle}` : name;
+    void displayName;
     // Create transformation URL for framed image using correct ImageKit syntax
     const transformation = {
       // width: 600,

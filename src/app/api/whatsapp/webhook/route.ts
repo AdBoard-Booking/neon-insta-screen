@@ -4,6 +4,14 @@ import { createSubmission } from '@/lib/airtable';
 import { uploadImage } from '@/lib/imagekit';
 import { emitNewUpload } from '@/lib/socket-io';
 
+
+interface WhatsAppImageMessage {
+  type?: string;
+  image?: { id?: string };
+  from?: string;
+}
+
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const mode = searchParams.get('hub.mode');
@@ -46,7 +54,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleImageMessage(message: Record<string, any>) {
+async function handleImageMessage(message: WhatsAppImageMessage) {
   try {
     // Get the image URL from WhatsApp
     const imageUrl = message.image?.id;
@@ -55,6 +63,7 @@ async function handleImageMessage(message: Record<string, any>) {
     // For demo purposes, we'll use a placeholder name
     // In production, you'd get this from the user's WhatsApp profile
     const phoneNumber = message.from;
+    if (!phoneNumber) return;
     const name = `User ${phoneNumber.slice(-4)}`; // Use last 4 digits as identifier
 
     // Download and process the image

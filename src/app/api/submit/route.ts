@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // If authenticated, update the submission to mark it as authenticated
     if (isAuthenticated && whatsappContact) {
-      await updateSubmissionAuth(submission.id, whatsappContact);
+      await updateSubmissionAuth(submission.id);
     }
 
     // Emit real-time event for FOMO banner

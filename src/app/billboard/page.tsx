@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Instagram, Heart, Share2, Users, QrCode } from 'lucide-react';
@@ -46,7 +48,7 @@ export default function BillboardPage() {
       fetchApprovedSubmissions();
       setShouldRefresh(false);
     }
-  }, [shouldRefresh]);
+  }, [setShouldRefresh, shouldRefresh]);
 
   // Handle celebration when FOMO banner shows new upload
   useEffect(() => {
